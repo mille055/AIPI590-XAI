@@ -2,3 +2,4 @@ torch
 torchvision
 adversarial-robustness-toolbox
 kaggle
+pygam
