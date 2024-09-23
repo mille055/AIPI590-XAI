@@ -4,4 +4,4 @@ adversarial-robustness-toolbox
 kaggle
 pygam
 imodels
-"git+https://github.com/christophM/rulefit.git"
+"https://github.com/christophM/rulefit.git"
