@@ -7,4 +7,5 @@ imodels
 shap
 lime
 alibi
+pydicom==2.1.2
 rulefit @ git+https://github.com/christophM/rulefit.git
