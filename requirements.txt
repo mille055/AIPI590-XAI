@@ -10,5 +10,6 @@ alibi
 pydicom==2.1.2
 pdpbox
 huggingface_hub
+datasets
 rulefit @ git+https://github.com/christophM/rulefit.git
 alepython @ git+https://github.com/MaximeJumelle/ALEPython.git
