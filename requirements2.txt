@@ -1,0 +1,10 @@
+bitsandbytes
+transformers==4.36.2
+peft
+accelerate
+trl
+datasets
+sentencepiece
+openpyxl
+xlrd
+openai
