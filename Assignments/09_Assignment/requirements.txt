@@ -4,3 +4,4 @@ transformer_lens
 plotly
 pandas
 numpy
+typing
