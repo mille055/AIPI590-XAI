@@ -28,9 +28,15 @@ TransformerLens
 ## Setup
 1. Clone the repository:
 ```
-git clone 
+git clone https://github.com/mille055/AIPI590-XAI.git
 ```
 2. Create and activate a virtual environment
+
+First, get into the subdirectory for this app:
+```
+cd Assignments/09_Assignment 
+```
+Then
 
 On a Mac:
 ```
