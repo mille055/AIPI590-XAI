@@ -30,6 +30,10 @@ concept_examples = {
     "Cardiac Symptoms": {
         "positive": ["The patient complains of chest pain during exertion.", "There is a family history of heart disease."],
         "negative": ["The patient reports no cardiovascular symptoms.", "The patient has a normal heart rate."]
+    },
+    "Liver Mass": {
+        "positive": ["The MRI shows a mass in the cirrhotic liver.", "The lesion is mildly T2 hyperintense, hyperenhances on the arterial phase, and washes out on the equilibrium phase.", "The mass can be classified as LI-RADS 5 for hepatocellular carcinoma."],
+        "negative": ["The liver is normal.", "No masses are detected.", "There is no evidence of liver disease."]
     }
 }
 
@@ -108,7 +112,7 @@ st.write("This application also includes Concept Analysis (CAV) to measure how w
 st.write("Note: Please use light mode or the custom theme for the best viewing experience.")
 
 # Analysis Type Selection
-analysis_type = st.radio("Choose an Analysis Type:", ["Attention Patterns: Select this to view how the model attends to each token in the text at various layers and heads.", "Concept Analysis (CAV): Click this button to compute the similarity score for the entered text, visualizing how the model's internal representations match the concept."])
+analysis_type = st.radio("Choose an Analysis Type:", ["Attention Patterns: Select this to view how the model attends to each token in the text at various layers and heads.", "Concept Analysis (CAV): Click this button to compute the similarity score for the entered text, visualizing how the model's internal representations match the preselected concept."])
 
 # Display options based on analysis type
 if analysis_type.startswith("Attention Patterns"):
