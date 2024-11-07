@@ -63,11 +63,11 @@ if analysis_type == "Memory Retention":
         activations = capture_activations(model, tokens)
     
         # Select a token index to visualize 
-        token_index = len(tokens[0]) // 2
-        fig = plot_memory_retention(activations, token_index)
+        #token_index = len(tokens[0]) // 2
+        #fig = plot_memory_retention(activations, token_index)
     
         # Display Plotly chart in Streamlit
-        st.plotly_chart(fig)
+        #st.plotly_chart(fig)
 
         # Capture attention weights and store in session state
         st.session_state["attention_weights"] = capture_attention_weights(model, tokens)

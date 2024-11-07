@@ -1,6 +1,6 @@
 import torch
 from transformer_lens import HookedTransformer, utils
-from typing import List, Dict
+#from typing import List, Dict
 
 # Function to capture activations for a given text
 def capture_activations(model: HookedTransformer, tokens, layer_name: str):
@@ -21,7 +21,7 @@ def capture_activations(model: HookedTransformer, tokens, layer_name: str):
     return activations[layer_name]
 
 # Function to generate a CAV from positive and negative examples
-def generate_cav(model: HookedTransformer, tokenizer, positive_texts: List[str], negative_texts: List[str], layer_name: str):
+def generate_cav(model: HookedTransformer, tokenizer, positive_texts: list[str], negative_texts: list[str], layer_name: str):
     # Tokenize positive and negative texts
     positive_tokens = [tokenizer(text, return_tensors="pt")["input_ids"] for text in positive_texts]
     negative_tokens = [tokenizer(text, return_tensors="pt")["input_ids"] for text in negative_texts]
@@ -55,7 +55,7 @@ def calculate_cav_similarity(model: HookedTransformer, tokenizer, text: str, cav
     return similarity
 
 # Function to calculate similarity scores between CAV and text activations for multiple layers
-def calculate_layerwise_cav_similarity(model: HookedTransformer, tokenizer, text: str, cavs: dict, layers: List[str]):
+def calculate_layerwise_cav_similarity(model: HookedTransformer, tokenizer, text: str, cavs: dict, layers: list[str]):
     tokens = tokenizer(text, return_tensors="pt")["input_ids"]
     similarity_scores = []
 
