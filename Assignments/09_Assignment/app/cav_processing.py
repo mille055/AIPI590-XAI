@@ -57,13 +57,19 @@ def calculate_cav_similarity(model: HookedTransformer, tokenizer, text: str, cav
 # Function to calculate similarity scores between CAV and text activations for multiple layers
 def calculate_layerwise_cav_similarity(model: HookedTransformer, tokenizer, text: str, cavs: dict, layers: list[str]):
     tokens = tokenizer(text, return_tensors="pt")["input_ids"]
+    _, cache = model.run_with_cache(tokens)
+
     similarity_scores = []
 
     # Calculate similarity for each specified layer
     for layer_name in layers:
-        text_activations = capture_activations(model, tokens, layer_name).mean(dim=1).squeeze()  # Average across tokens
-        cav = cavs[layer_name].squeeze()  # Ensure CAV is also a 1D tensor
-        similarity = torch.cosine_similarity(text_activations, cav, dim=0).item()
+        if layer_name in cavs:
+            
+            text_activations = capture_activations(model, tokens, layer_name).mean(dim=1).squeeze()  # Average across tokens
+            cav = cavs[layer_name].squeeze() 
+            similarity = torch.cosine_similarity(text_activations, cav, dim=0).item()
+        else: 
+            similarity = 0.0 
         similarity_scores.append(similarity)
-
+    print ('similarity_scores:', similarity_scores)
     return similarity_scores

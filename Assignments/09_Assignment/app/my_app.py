@@ -10,14 +10,15 @@ from cav_processing import generate_cav, calculate_cav_similarity, calculate_lay
 model = load_model()
 tokenizer = model.tokenizer
 
-MAX_TOKEN_LENGTH = 32
+MAX_TOKEN_LENGTH = 50
 
 # Pre-selected text options
 pre_selected_texts = {
     "Case Study 1: Respiratory Symptoms": "A patient with a history of chronic cough presents with new symptoms of difficulty breathing, particularly during exercise. No prior history of asthma is reported.",
-    "Case Study 2: Cardiac Symptoms": "The patient complains of chest pain that occurs mostly during physical exertion and is relieved by rest. There is a family history of heart disease.",
-    "General Medical Report": "The patient is a 45-year-old male presenting with fatigue, weight loss, and night sweats. Lab results show elevated white blood cell counts.",
-    "Shakespearean Sonnet": "Shall I compare thee to a summer’s day? Thou art more lovely and more temperate. Rough winds do shake the darling buds of May, And summer’s lease hath all too short a date. Sometime too hot the eye of heaven shines, And often is his gold complexion dimmed; And every fair from fair sometime declines, By chance or nature’s changing course untrimmed. But thy eternal summer shall not fade Nor lose possession of that fair thou ow’st, Nor shall Death brag thou wand’rest in his shade, When in eternal lines to time thou grow’st. So long as men can breathe or eyes can see, So long lives this, and this gives life to thee"
+    "Case Study 2: Chest CT Report": "There is subsegmental pulmonary embolism in the right lower lobe. No evidence of right heart strain. No pleural effusion.",
+    "Case Study 3: Abdominal MRI Report": "MRI shows a 2 cm mass in the left hepatic lobe. The lesion is T2 hyperintense and has discontinuous peripheral nodular enhancement on post contrast imaging.", 
+    "Case Study 4: General Medical Report": "The patient is a 45-year-old male presenting with fatigue, weight loss, and night sweats. Lab results show elevated white blood cell counts.",
+    "Case Study 5: Shakespearean Sonnet": "Shall I compare thee to a summer’s day? Thou art more lovely and more temperate. Rough winds do shake the darling buds of May, And summer’s lease hath all too short a date. Sometime too hot the eye of heaven shines, And often is his gold complexion dimmed; And every fair from fair sometime declines, By chance or nature’s changing course untrimmed. But thy eternal summer shall not fade Nor lose possession of that fair thou ow’st, Nor shall Death brag thou wand’rest in his shade, When in eternal lines to time thou grow’st. So long as men can breathe or eyes can see, So long lives this, and this gives life to thee"
 }
 
 # Define positive and negative examples for CAV concepts
@@ -176,14 +177,14 @@ if analysis_type.startswith("Attention Patterns"):
         selected_head = st.slider("Select Attention Head", 0, model.cfg.n_heads - 1, 0)
    
         # Toggle between custom Plotly and CircuitsVis visualizations
-        visualization_type = st.radio("Choose Visualization Method:", ["Custom Plotly", "CircuitsVis"])
+        visualization_type = st.radio("Choose Visualization Method:", ["Custom Plotly: Custom visualization showing the attenuation weights for the key and query tokens for the selected layer and head.", "CircuitsVis: Interactive visualization of attention patterns using CircuitsVis."])
 
-        if visualization_type == "Custom Plotly":
+        if visualization_type.startswith("Custom Plotly"):
             # Generate the attention plot based on current slider positions
             attention_fig = plot_attention_pattern(st.session_state["attention_weights"], selected_layer, selected_head)
             st.plotly_chart(attention_fig)
 
-        if visualization_type == "CircuitsVis":
+        if visualization_type.startswith("CircuitsVis"):
             # Display attention patterns using CircuitsVis
             logits, cache, tokens = get_model_cache(model, input_text)
             visualize_attention_patterns(cache, model, tokens, selected_layer)
