@@ -1,11 +1,18 @@
-# Memory and Context Retention Analysis App Using TransformerLens
+# Attention Analysis and Concept Activation Vector (CAV) Analysis Using TransformerLens
 
 This project uses TransformerLens, a powerful library for mechanistic interpretability of transformer models, to analyze memory retention and attention patterns in GPT-2. This Streamlit application provides an interactive environment to explore how the model processes context across layers and attention heads, allowing users to examine how specific tokens in the input are retained or attended to as they pass through the model's layers.
 
 
 ## Overview
 
-This application uses TransofmerLens to visualize the attention patterns in a language model and allows users to observe memory retention across transformer layers. It provides an interactive way to explore specific layers and attention heads, giving insights into which tokens a model focuses on and how context is retained or transformed at different levels.
+This application provides two main analyses:
+
+### Attention Pattern Analysis: 
+Visualizes how GPT-2 attends to different tokens across layers and attention heads. This helps users understand which parts of the input the model focuses on when processing text and how attention shifts across layers.
+
+### Concept Activation Vector (CAV) Analysis: 
+Measures how well the model’s internal representations align with predefined concepts, such as "Respiratory Distress" or "Cardiac Symptoms." This analysis aims to quantify the model’s understanding of specific concepts, allowing users to evaluate the depth of concept representation in different layers.
+
 
 ## What is TransformerLens? 
 
@@ -17,6 +24,23 @@ TransformerLens is a library developed specifically for exploring and interpreti
 
 In this project, TransformerLens is used to capture and visualize residual activations at each layer, showing how information about each token is transformed across layers.
 
+## Application Details
+### Attention Analysis
+In attention analysis, the application allows users to:
+
+1. Select a layer and head to observe token-level attention distributions.
+2. Visualize attention patterns with an interactive heatmap, showing the importance of each token relative to others.
+3. Explore how the model’s focus changes across different layers and attention heads, revealing where the model captures short- or long-term dependencies.
+
+### Concept Analysis with CAVs
+In CAV analysis, the application allows users to:
+
+!. Define a concept with positive and negative examples, creating a contrastive concept vector.
+2. Input a sentence and calculate similarity scores between the model's activations and the concept vector at each layer, providing insights into how well the model aligns with the concept across layers.
+
+3. Visualize these scores across layers, helping users understand which layers best capture the concept and identify potential areas for improvement in model training or interpretability.
+
+Potential use cases include examining model bias terms or comparing attention patterns across heads and layers for exploratory analysis.  
 
 ## Prerequisites
 Python 3.9+
