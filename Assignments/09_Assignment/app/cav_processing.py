@@ -51,12 +51,12 @@ def calculate_cav_similarity(model: HookedTransformer, tokenizer, text: str, cav
     # solve the issue of the extra dimension
     text_activations = text_activations.squeeze()
 
-
     # Normalize text activations for each token for consistent comparison
     text_activations = text_activations / text_activations.norm(dim=-1, keepdim=True)
 
     # Calculate the cosine similarity between the CAV and the text activations
     similarity_scores = torch.cosine_similarity(text_activations, cav.unsqueeze(0), dim=-1)
+    
     average_similarity = similarity_scores.mean().item()
     max_similarity = similarity_scores.max().item()
     print('max similarity:', max_similarity)
@@ -81,6 +81,29 @@ def calculate_layerwise_cav_similarity(model: HookedTransformer, tokenizer, text
         similarity_scores.append(similarity)
 
     return similarity_scores
+
+# Function to calculate similarity scores between CAV and text activations for multiple layers
+def calculate_cav_similarity_multiple_layers(model: HookedTransformer, tokenizer, text: str, cav: torch.Tensor, layers: list[str]):
+    tokens = tokenizer(text, return_tensors="pt")["input_ids"]
+    similarity_scores = []
+
+    # Calculate similarity for each specified layer
+    for layer_name in layers:
+        # Capture activations for the text at the specified layer
+        text_activations = capture_activations(model, tokens, layer_name).squeeze()
+
+        # Normalize text activations for each token for consistent comparison
+        text_activations = text_activations / text_activations.norm(dim=-1, keepdim=True)
+
+        # Calculate token-wise cosine similarities and take the average
+        similarity = torch.cosine_similarity(text_activations, cav.unsqueeze(0), dim=-1).mean().item()
+        similarity_scores.append(similarity)
+
+    # Calculate the overall average and max similarity across all layers
+    average_similarity = sum(similarity_scores) / len(similarity_scores)
+    max_similarity = max(similarity_scores)  
+    return average_similarity, max_similarity, similarity_scores
+
 
 # Plotting function for CAV similarity
 def plot_cav_similarity(similarity_score, layerwise_similarity, concept):

@@ -4,7 +4,7 @@ import torch
 import circuitsvis as cv
 from circuitsvis.attention import attention_heads
 from activation_processing import load_model, capture_activations, plot_memory_retention, capture_attention_weights
-from cav_processing import generate_cav, calculate_cav_similarity, calculate_layerwise_cav_similarity, plot_cav_similarity
+from cav_processing import generate_cav, calculate_cav_similarity, calculate_layerwise_cav_similarity, plot_cav_similarity, calculate_cav_similarity_multiple_layers
 
 # Load the model
 model = load_model()
@@ -24,8 +24,8 @@ pre_selected_texts = {
 # Define positive and negative examples for CAV concepts
 concept_examples = {
     "Respiratory Distress": {
-        "positive": ["The patient is experiencing difficulty breathing.", "Respiratory rate is elevated."],
-        "negative": ["The patient is resting comfortably.", "There is no evidence of respiratory issues."]
+        "positive": ["The patient is experiencing difficulty breathing.", "Respiratory rate is elevated.", "The oxygen saturation is low."],
+        "negative": ["The patient is resting comfortably.", "The patient appears well.", "The patient has normal lung sounds."]
     },
     "Cardiac Symptoms": {
         "positive": ["The patient complains of chest pain during exertion.", "There is a family history of heart disease."],
@@ -175,19 +175,22 @@ if analysis_type.startswith("Concept Analysis (CAV)"):
 
     # Text input for user to provide their own text
     input_text = st.text_area("Enter text for comparison with selected concept", "Type here...")
-    # Define layers to analyze for layerwise similarity
-    layers_to_analyze = [f"blocks.{i}.hook_resid_post" for i in range(model.cfg.n_layers)]
-    print('layers_to_analyze:', layers_to_analyze)
+    
+    
 
     if st.button("Calculate CAV Similarity"):
+       # Define layers to analyze for layerwise similarity
+        layers_to_analyze = [f"blocks.{i}.hook_resid_post" for i in range(model.cfg.n_layers)]
+        print('layers_to_analyze:', layers_to_analyze)
         
         # Calculate similarity between input text and the selected concept's CAV
-        avg_similarity_score, max_similarity_score = calculate_cav_similarity(model, tokenizer, input_text, cavs[concept], layer_name)
-        layerwise_similarity_score = calculate_layerwise_cav_similarity(model, tokenizer, input_text, cavs[concept], layers_to_analyze)
+        avg_similarity_score, max_similarity_score, layerwise_similarity_scores = calculate_cav_similarity_multiple_layers(
+        model, tokenizer, input_text, cavs[concept], layers_to_analyze
+    )
         
         # Display the similarity score
         st.write(f"Overall average similarity to '{concept}': {avg_similarity_score:.3f}")
         st.write(f"Maximum similarity to '{concept}': {max_similarity_score:.3f}")
 
         # Display bar chart
-        plot_cav_similarity(max_similarity_score, layerwise_similarity_score, concept)
+        plot_cav_similarity(max_similarity_score, layerwise_similarity_scores, concept)
