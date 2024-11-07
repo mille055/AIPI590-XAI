@@ -60,3 +60,11 @@ Change the directory to the app and run the app with the following commands:
 cd app
 streamlit run my_app.py
 ```
+# Acknowledgments
+The code and ideas borrow from the TensorLens main demo colab notebook:
+(https://colab.research.google.com/github/neelnanda-io/TransformerLens/blob/main/demos/Main_Demo.ipynb)
+
+and the other demo pages:
+(https://transformerlensorg.github.io/TransformerLens/content/tutorials.html)
+
+Copilot used for autocomplete in the Visual Studio Code environment for this project.

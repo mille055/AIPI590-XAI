@@ -1,6 +1,8 @@
 import streamlit as st
 import plotly.express as px
 import torch
+import circuitsvis
+from circuitsvis.attention import attention_heads
 from activation_processing import load_model, capture_activations, plot_memory_retention, capture_attention_weights
 from cav_processing import generate_cav, calculate_cav_similarity, calculate_layerwise_cav_similarity
 
@@ -34,8 +36,25 @@ layer_name = "blocks.10.hook_resid_post"
 for concept, examples in concept_examples.items():
     cavs[concept] = generate_cav(model, tokenizer, examples["positive"], examples["negative"], layer_name)
 
+def plot_attention_patterns(model, tokens, head_indices, layer, title="Attention Patterns"):
+             # Tokenize the input text
+            tokens = tokenizer.encode(input_text, return_tensors="pt")
+            
+            # Get the attention patterns
+            output = model(tokens, output_attentions=True)
+            attention_pattern = output[-1][layer]  # Get the attention for the specified layer
+            
+            # Extract patterns for selected heads
+            selected_patterns = attention_pattern[:, :, head_indices, :].detach().cpu().numpy()
+            
+            # Render using CircuitsVis
+            tokens_str = tokenizer.convert_ids_to_tokens(tokens[0])
+            attention_html = attention_heads(attention=selected_patterns, tokens=tokens_str).show_code()
+            st.components.v1.html(attention_html, height=600)
+
+
 # Streamlit UI
-st.title("Memory and Context Retention Analysis")
+st.title("Memory and Context Retention Analysis Using TransformerLens")
 
 st.write("This project uses TransformerLens, a powerful library for mechanistic interpretability of transformer models, to analyze memory retention and attention patterns in GPT-2. This Streamlit application provides an interactive environment to explore how the model processes context across layers and attention heads, allowing users to examine how specific tokens in the input are retained or attended to as they pass through the model's layers.")
 
@@ -113,6 +132,9 @@ if analysis_type == "Memory Retention":
         # Generate the attention plot based on current slider positions
         attention_fig = plot_attention_pattern(st.session_state["attention_weights"], selected_layer, selected_head)
         st.plotly_chart(attention_fig)
+
+        plot_attention_patterns(model, tokenizer, input_text, selected_layer, selected_head)
+
 
     # cavs = {}
     # for concept, examples in concept_examples.items():
