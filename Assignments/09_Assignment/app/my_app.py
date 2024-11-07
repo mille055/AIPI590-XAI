@@ -104,7 +104,7 @@ def visualize_attention_patterns(cache, model, tokens, layer_index):
 st.markdown("<style>body { background-color: white; }</style>", unsafe_allow_html=True)
 st.title("Transformer Attention and Concept Analysis Using TransformerLens")
 
-st.write("This project uses TransformerLens, a powerful library for mechanistic interpretability of transformer models, to analyze memory retention and attention patterns in GPT-2. This Streamlit application provides an interactive environment to explore how the model processes context across layers and attention heads, allowing users to examine how specific tokens in the input are retained or attended to as they pass through the model's layers.")
+st.write("This project uses TransformerLens, a powerful library for mechanistic interpretability of transformer models, to analyze attention patterns in GPT-2 for those with a basic understanding. This Streamlit application provides an interactive environment to explore how the model processes context across layers and attention heads, allowing users to examine how specific tokens in the input are retained or attended to as they pass through the model's layers.")
 st.write("Transformer models, like GPT-2, adjust their focus on words in a sentence based on context and task. By visualizing attention patterns, we can see which words the model prioritizes during text interpretation or prediction. \
 Transformers have multiple layers and attention heads. Each layer refines focus across the input, while each head captures different aspects of the text. GPT-2’s causal attention restricts tokens to attend only to previous tokens, creating a sequential flow of information essential for predictive tasks.")
 
@@ -161,13 +161,15 @@ if analysis_type.startswith("Attention Patterns"):
             logits, cache, tokens = get_model_cache(model, input_text)
             visualize_attention_patterns(cache, model, tokens, selected_layer)
 
-        # if st.button("Show Attention Patterns"):
-        #     #Capture the model activations
-        #     logits, cache, tokens = get_model_cache(model, input_text)
-    
-        #     # Display the attention pattern for the specified layer
-        #     visualize_attention_patterns(cache, model, tokens, selected_layer)
-
+        st.subheader("Interpreting Attention Analysis Results")
+        st.write("""
+        In this section, you are visualizing the attention patterns of the selected transformer model. The attention heads and layers each serve different roles in interpreting the input text:
+        - **Attention Head**: Each head in a layer has the ability to focus on different parts of the text, highlighting specific words or tokens. Selecting different heads can reveal which parts of the input are being emphasized by the model at each step.
+        - **Layer**: Each layer in the transformer progressively refines the model's understanding of the input. Lower layers typically capture basic patterns (like word associations), while higher layers capture more abstract, context-aware relationships. 
+        - **Interpretation**: By examining the attention heatmap, you can see which tokens are prioritized when the model processes the input. A darker color represents higher attention weights, indicating greater focus on that token. The attention patterns often help reveal dependencies, such as how nouns and verbs relate or how earlier and later tokens in a sequence influence each other.
+        
+        Use this visualization to explore how attention changes across layers and heads, allowing insights into the model's contextual understanding and focus on specific terms or ideas in your text.
+        """)
 
 if analysis_type.startswith("Concept Analysis (CAV)"):
     # Concept selection
@@ -198,3 +200,13 @@ if analysis_type.startswith("Concept Analysis (CAV)"):
 
         # Display bar chart
         plot_cav_similarity(max_similarity_score, layerwise_similarity_scores, concept)
+
+        st.subheader("Interpreting Concept Analysis (CAV) Results")
+        st.write("""
+        In this section, you are assessing how well the model aligns with a specific concept, such as "Respiratory Distress" or "Cardiac Symptoms." This analysis uses **Concept Activation Vectors (CAVs)** to capture the essence of a concept based on positive and negative examples. Here’s how to interpret the results:
+        - **Overall Average Similarity Score**: This score represents the average alignment between the model's activations and the concept across all layers. Higher values indicate stronger alignment, suggesting that the model understands or captures the concept well across the entire network.
+        - **Maximum Similarity Score**: This score represents the highest layer-specific alignment with the concept. A high maximum score may indicate that certain layers specialize more in representing the concept.
+        - **Layerwise Similarity Plot**: The line plot shows the similarity score at each layer, revealing which layers align most with the concept. This can help you identify where in the model’s hierarchy the concept is best represented. For example, if a concept is strongly aligned in higher layers, it may suggest that the model relies on more abstract representations to capture it.
+
+        Together, these scores help you evaluate how well the model understands a concept and at which layers this understanding is strongest.
+        """)
