@@ -4,7 +4,7 @@ import torch
 import circuitsvis as cv
 from circuitsvis.attention import attention_heads
 from activation_processing import load_model, capture_activations, plot_memory_retention, capture_attention_weights
-from cav_processing import generate_cav, calculate_cav_similarity, calculate_layerwise_cav_similarity
+from cav_processing import generate_cav, calculate_cav_similarity, calculate_layerwise_cav_similarity, plot_cav_similarity
 
 # Load the model
 model = load_model()
@@ -79,40 +79,8 @@ def plot_attention_pattern(attention_weights, selected_layer, selected_head):
     fig.update_layout(yaxis=dict(tickmode="array", tickvals=list(range(len(input_tokens))), ticktext=input_tokens))
     return fig
 
-# def plot_attention_patterns(model, tokenizer, input_text, layer, head_indices):
-#     # Tokenize the input text
-#     tokens = tokenizer.encode(input_text, return_tensors="pt")
-    
-#     # Define a hook to capture attention patterns
-#     attention_pattern = None
-#     def hook_fn(module, input, output):
-#         nonlocal attention_pattern
-#         attention_pattern = output  
 
-#     # Register the hook to the specified layer’s attention
-#     handle = model.blocks[layer].attn.hook_pattern.register_forward_hook(hook_fn)
-    
-#     # Run the model to trigger the hook and capture attention
-#     with torch.no_grad():
-#         model(tokens)
-    
-#     # Remove the hook
-#     handle.remove()
-
-#     # Convert token IDs to token strings for display
-#     gpt2_str_tokens = [model.tokenizer.decode([token]).strip() for token in st.session_state["tokens"][0].tolist()]
-#     print('gpt2_str_tokens:', gpt2_str_tokens)
-
-#     # Render the attention patterns for specified heads
-#     attention_html = cv.attention.attention_patterns(
-#         tokens=gpt2_str_tokens,
-#         attention=attention_pattern[0, head_indices].detach().cpu().numpy()
-#     ).show_code()
-
-#     # Display the generated HTML in Streamlit
-#     st.components.v1.html(attention_html, height=600, scrolling=True)
-
-
+# Function to visualize attention patterns using CircuitsVis
 def visualize_attention_patterns(cache, model, tokens, layer_index):
     # Access attention pattern for the specified layer
     attention_pattern = cache["blocks." + str(layer_index) + ".attn.hook_pattern"]
@@ -200,7 +168,11 @@ if analysis_type.startswith("Attention Patterns"):
 if analysis_type.startswith("Concept Analysis (CAV)"):
     # Concept selection
     concept = st.selectbox("Select a Concept for Analysis", list(cavs.keys()))
-    
+    positive_texts = concept_examples[concept]["positive"]
+    st.write(f"Selected positive examples for '{concept}':")
+    for text in positive_texts:
+        st.write(f"- {text}")
+
     # Text input for user to provide their own text
     input_text = st.text_area("Enter text for comparison with selected concept", "Type here...")
     # Define layers to analyze for layerwise similarity
@@ -208,13 +180,14 @@ if analysis_type.startswith("Concept Analysis (CAV)"):
     print('layers_to_analyze:', layers_to_analyze)
 
     if st.button("Calculate CAV Similarity"):
+        
         # Calculate similarity between input text and the selected concept's CAV
-        similarity_score = calculate_cav_similarity(model, tokenizer, input_text, cavs[concept], layer_name)
-        layerwise_similarity = calculate_layerwise_cav_similarity(model, tokenizer, input_text, cavs[concept], layers_to_analyze)
+        avg_similarity_score, max_similarity_score = calculate_cav_similarity(model, tokenizer, input_text, cavs[concept], layer_name)
+        layerwise_similarity_score = calculate_layerwise_cav_similarity(model, tokenizer, input_text, cavs[concept], layers_to_analyze)
         
         # Display the similarity score
-        st.write(f"Similarity to '{concept}': {similarity_score:.2f}")
+        st.write(f"Overall average similarity to '{concept}': {avg_similarity_score:.3f}")
+        st.write(f"Maximum similarity to '{concept}': {max_similarity_score:.3f}")
 
         # Display bar chart
-        #st.bar_chart([similarity_score])
-        st.line_chart(layerwise_similarity, width=700, height=400)
+        plot_cav_similarity(max_similarity_score, layerwise_similarity_score, concept)
