@@ -19,7 +19,7 @@ In this project, TransformerLens is used to capture and visualize residual activ
 
 
 ## Prerequisites
-Python 3.7+
+Python 3.9+
 Streamlit
 PyTorch (for running the model)
 Plotly
@@ -55,7 +55,8 @@ pip install -r requirements.txt
 ```
 
 4. Run the application:
-From the app folder, run:
+Change the directory to the app and run the app with the following commands:
 ```
-streamlit run memory_retention_app.py
+cd app
+streamlit run my_app.py
 ```

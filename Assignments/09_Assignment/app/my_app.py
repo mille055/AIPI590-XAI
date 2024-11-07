@@ -37,6 +37,8 @@ for concept, examples in concept_examples.items():
 # Streamlit UI
 st.title("Memory and Context Retention Analysis")
 
+st.write("This project uses TransformerLens, a powerful library for mechanistic interpretability of transformer models, to analyze memory retention and attention patterns in GPT-2. This Streamlit application provides an interactive environment to explore how the model processes context across layers and attention heads, allowing users to examine how specific tokens in the input are retained or attended to as they pass through the model's layers.")
+
 # Analysis Type Selection
 analysis_type = st.radio("Choose an Analysis Type:", ["Memory Retention", "Concept Analysis (CAV)"])
 
