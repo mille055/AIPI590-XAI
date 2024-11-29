@@ -17,6 +17,10 @@ from scripts.config import *
 from scripts.utils import *
 from scripts.cnn.cnn_inference import *
 
+from lime.lime_image import LimeImageExplainer
+from skimage.segmentation import mark_boundaries
+
+
 
 # Function to check if the image has been processed and return the value in the DICOM tag (0010, 1010)
 def check_prediction_tag(dcm_data):
@@ -118,3 +122,91 @@ def extract_number_from_filename(filename):
     else:
         # Return -1 if no numbers are found in the filename
         return -1
+
+def lime_predict_fn(images, model):
+    """
+    Wrapper for LIME to preprocess images and get predictions.
+
+    Args:
+        images (ndarray): Batch of images as numpy arrays (H, W, C).
+        model (torch.nn.Module): The PyTorch model.
+
+    Returns:
+        ndarray: Softmax probabilities for each class.
+    """
+    device = next(model.parameters()).device  # Ensure device compatibility
+    images = torch.tensor(images.transpose(0, 3, 1, 2)).float().to(device)  # Convert to (batch, channels, H, W)
+
+    with torch.no_grad():
+        outputs = model(images)
+
+    return torch.nn.functional.softmax(outputs, dim=1).cpu().numpy()
+
+def get_lime_mask(image, model, lime_predict_fn, test_transform):
+    """
+    Generate a LIME mask for an image.
+
+    Args:
+        image (ndarray): The input image.
+        model (torch.nn.Module): The trained model.
+        lime_predict_fn (Callable): LIME-compatible prediction function.
+        test_transform (transforms.Compose): The test transform pipeline.
+
+    Returns:
+        ndarray: LIME mask.
+    """
+    # Initialize the LIME explainer
+    explainer = LimeImageExplainer()
+
+    # Preprocess the image for the model
+    image_pil = Image.fromarray(image).convert('RGB')  # Ensure RGB
+    processed_image = test_transform(image_pil).unsqueeze(0).to(next(model.parameters()).device)
+
+    # Convert processed image back to numpy for LIME
+    image_np = processed_image.squeeze(0).permute(1, 2, 0).cpu().numpy()
+
+    # Generate the explanation
+    explanation = explainer.explain_instance(image_np, lambda imgs: lime_predict_fn(imgs, model),
+                                             top_labels=1, hide_color=0, num_samples=1000)
+
+    # Get the mask for the top predicted class
+    _, mask = explanation.get_image_and_mask(explanation.top_labels[0], positive_only=False, num_features=10, hide_rest=False)
+
+    return mask
+
+
+def generate_lime_explanation(image, model, predict_fn, num_samples=1000):
+    """
+    Generate a LIME explanation for the given image and model.
+
+    Args:
+        image (ndarray): The input image to explain.
+        model (Callable): The prediction model.
+        predict_fn (Callable): A prediction function that matches LIME's expected input.
+        num_samples (int): Number of perturbed samples to generate for LIME.
+
+    Returns:
+        ndarray: Image with LIME overlay.
+    """
+    explainer = LimeImageExplainer()
+
+    explanation = explainer.explain_instance(
+        image,  # The image to explain
+        predict_fn,  # The model's prediction function
+        top_labels=1,  # Number of top labels to explain
+        hide_color=0,
+        num_samples=num_samples  # Number of samples to generate
+    )
+
+    # Get the explanation for the top predicted label
+    top_label = explanation.top_labels[0]
+    lime_overlay, mask = explanation.get_image_and_mask(
+        top_label,
+        positive_only=False,
+        num_features=10,
+        hide_rest=False
+    )
+
+    # Overlay LIME explanation on the image
+    lime_overlay = mark_boundaries(lime_overlay, mask)
+    return lime_overlay

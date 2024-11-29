@@ -8,17 +8,21 @@ import glob
 import numpy as np
 from PIL import Image, ImageDraw
 from glob import glob
-
-
-
 import sys
 
 from scripts.demo_utils import check_prediction_tag, load_dicom_data, apply_window_level, normalize_array, get_single_image_inference
 from scripts.demo_utils import extract_number_from_filename
+from scripts.demo_utils import generate_lime_explanation, get_lime_mask, lime_predict_fn
 from  scripts.process_tree import Processor 
 from scripts.cnn.cnn_inference import *
 from  scripts.config import *
 from scripts.utils import *
+
+test_transform = transforms.Compose([
+    transforms.Resize((299, 299)),  # Match the model input size
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+])
 
 #from azure.storage.blob import BlobServiceClient
 
@@ -28,8 +32,6 @@ from scripts.utils import *
 
 # blob_service_client = BlobServiceClient.from_connection_string(connection_string)
 # container_client = blob_service_client.get_container_client(container_name)
-
-
 
 st.set_page_config(page_title="Abdominal MRI Series Classifier", layout="wide")
 
@@ -182,6 +184,28 @@ if os.path.exists(start_folder) and os.path.isdir(start_folder):
                 predicted_type, predicted_confidence = get_single_image_inference(image_path, model)
                 st.write(f'Predicted type: {predicted_type}, confidence score: {predicted_confidence:.2f}')
             
+            get_lime_explanation = st.button("Generate LIME Explanation")
+            if get_lime_explanation:
+                
+                if image_path:
+                    try:
+                        # Load the DICOM image
+                        ds = pydicom.dcmread(image_path)
+                        image = ds.pixel_array
+
+                        # Run LIME and get the mask
+                        lime_mask = get_lime_mask(image, model, lime_predict_fn, test_transform)
+
+                        # Superimpose the LIME mask
+                        superimposed_image = mark_boundaries(image, lime_mask)
+
+                        # Display the LIME explanation
+                        st.image(superimposed_image, caption="LIME Explanation", use_column_width=True)
+                    except Exception as e:
+                        st.error(f"Error generating LIME explanation: {e}")
+                else:
+                    st.warning("Please select an image.")
+
            
         else:
             st.warning("No DICOM files found in the folder.")
