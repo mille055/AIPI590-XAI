@@ -34,7 +34,7 @@ from scripts.utils import *
 st.set_page_config(page_title="Abdominal MRI Series Classifier", layout="wide")
 
 st.title("Abdominal MRI Series Classifier")
-st.subheader("Stanford 231N, Spring 2023")
+st.subheader("Duke AIPI590-XAI Final Project")
 st.write("Chad Miller")
 
 model = load_pixel_model('models/best_0606.pth', model_type='DenseNet')
