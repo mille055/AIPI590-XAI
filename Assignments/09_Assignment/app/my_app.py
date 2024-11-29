@@ -103,7 +103,7 @@ def visualize_attention_patterns(cache, model, tokens, layer_index):
 # Streamlit UI
 st.markdown("<style>body { background-color: white; }</style>", unsafe_allow_html=True)
 st.title("Transformer Attention and Concept Analysis Using TransformerLens")
-
+s
 st.write("This project uses TransformerLens, a powerful library for mechanistic interpretability of transformer models, to analyze attention patterns in GPT-2 for those with a basic understanding. This Streamlit application provides an interactive environment to explore how the model processes context across layers and attention heads, allowing users to examine how specific tokens in the input are retained or attended to as they pass through the model's layers.")
 st.write("Transformer models, like GPT-2, adjust their focus on words in a sentence based on context and task. By visualizing attention patterns, we can see which words the model prioritizes during text interpretation or prediction. \
 Transformers have multiple layers and attention heads. Each layer refines focus across the input, while each head captures different aspects of the text. GPT-2’s causal attention restricts tokens to attend only to previous tokens, creating a sequential flow of information essential for predictive tasks.")
