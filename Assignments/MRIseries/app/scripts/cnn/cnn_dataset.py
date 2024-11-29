@@ -4,7 +4,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 import pydicom
 
-from config import file_dict, classes
+from ..config import file_dict, classes
 
 # Custom dataset for the pixel-based CNN model. Gets pixel data and transforms it, and also the labels
 class ImgDataset(Dataset):
@@ -31,7 +31,6 @@ class ImgDataset(Dataset):
         ds = pydicom.dcmread(img_file)
         img = np.array(ds.pixel_array, dtype=np.float32)
         #img = img/255.
-        #img = cv2.resize(img, (224,224))
         img = img[np.newaxis]
         img = torch.from_numpy(np.asarray(img))
         

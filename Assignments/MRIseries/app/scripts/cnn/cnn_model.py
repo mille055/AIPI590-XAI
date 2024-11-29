@@ -3,8 +3,9 @@ import pandas as pd
 import torch
 import torch.nn as nn
 from torchvision import models
+import torch.nn.functional as F
 
-from config import classes
+from ..config import classes
  
 # custom resnet50 model with the top now being a fully connected layer with outputs corresponding to the 19 classes
 class CustomResNet50(nn.Module):
@@ -40,9 +41,10 @@ class CustomResNet50b(nn.Module):
 
 
 class CustomDenseNet(nn.Module):
-    def __init__(self, num_classes=len(classes)):
+    def __init__(self, num_classes=len(classes), pretrained=True):
         super(CustomDenseNet, self).__init__()
-        self.densenet = models.densenet121(pretrained=True)
+        model = models.densenet121(pretrained=pretrained)
+        self.densenet = model
 
         # Replace the last classifier layer to match the number of classes
         num_features = self.densenet.classifier.in_features

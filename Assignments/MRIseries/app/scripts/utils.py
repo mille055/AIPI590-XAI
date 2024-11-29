@@ -15,7 +15,7 @@ import torchvision
 from torchvision import datasets, models, transforms
 from torch.utils.data import Dataset, DataLoader
 from torchvision.transforms import ToTensor
-import os, sys, glob, re
+import os, sys, glob, re, random
 from joblib import dump, load
 from fastai.basics import delegates
 from fastcore.parallel import parallel
@@ -33,9 +33,9 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.utils.validation import check_is_fitted
 
 ### local imports ###
-from config import file_dict, abd_label_dict, classes, column_lists, feats
-from config import val_list, train_val_split_percent, random_seed, data_transforms
-from config import sentence_encoder, series_description_column
+from .config import file_dict, abd_label_dict, classes, column_lists, feats
+from .config import val_list, train_val_split_percent, random_seed, data_transforms
+from .config import sentence_encoder, series_description_column
 
 ### gets the dicom files from a provided directory ###
 def get_dicoms(path, first_dcm=False, **kwargs):
@@ -324,23 +324,52 @@ def load_datasets_from_csv(train_csv, val_csv, test_csv):
 
 # this function will select the image in the middle of each series of images, so that only a single image from each series is selected for training
 # There is one image from each series for each patient
-def shorten_df(df, selection_fraction = 0.5):
-  df1 = df.copy()
-  grouped_df = df.groupby(['patientID', 'series'])
-  sorted_df = grouped_df['file_info'].apply(lambda x: x.sort_values())
+# def shorten_df(df, selection_fraction = 0.5):
+#   df1 = df.copy()
+#   grouped_df = df.groupby(['patientID', 'series'])
+#   sorted_df = grouped_df['file_info'].apply(lambda x: x.sort_values())
   
-  selected_filename = grouped_df['file_info'].apply(lambda x: x.sort_values().iloc[int(len(x)*selection_fraction)])
+#   selected_filename = grouped_df['file_info'].apply(lambda x: x.sort_values().iloc[int(len(x)*selection_fraction)])
 
   
-  selected_filename = selected_filename.reset_index()
+#   selected_filename = selected_filename.reset_index()
   
-  # perform merge and deal with duplicate/unnecessary columns
-  df1 = df1.merge(selected_filename, on=['patientID', 'series'], how='left') 
-  df_short = df1.drop(['file_info_x', 'img_num'], axis=1)
-  df_short = df_short.rename(columns = {'file_info_y': 'file_info'})
-  df_short.drop_duplicates(inplace=True)
-  df_short.reset_index(drop=True, inplace=True)
-  return df_short
+#   # perform merge and deal with duplicate/unnecessary columns
+#   df1 = df1.merge(selected_filename, on=['patientID', 'series'], how='left') 
+#   df_short = df1.drop(['file_info_x', 'img_num'], axis=1)
+#   df_short = df_short.rename(columns = {'file_info_y': 'file_info'})
+#   df_short.drop_duplicates(inplace=True)
+#   df_short.reset_index(drop=True, inplace=True)
+#   return df_short
+
+
+def shorten_df(df, selection_behavior='single_point', selection_fraction = 0.5, a=0, b=1):
+    df1 = df.copy()
+    grouped_df = df.groupby(['patientID', 'series'])
+    sorted_df = grouped_df['file_info'].apply(lambda x: x.sort_values())
+  
+    start_idx = grouped_df['file_info'].apply(lambda x: int(len(x) * a))
+    end_idx = grouped_df['file_info'].apply(lambda x: int(len(x) * b) - 1)
+    end_idx = end_idx.where(end_idx >= start_idx, start_idx)  # Ensure end index is not less than start index
+    
+    if selection_behavior == 'single_point':
+        selected_filenames = grouped_df['file_info'].apply(lambda x: x.sort_values().iloc[int(len(x) * selection_fraction)])
+    elif selection_behavior == 'random':
+        selected_filenames = grouped_df['file_info'].apply(lambda x: x.sample(n=1))
+    elif selection_behavior == 'range':
+        selected_filenames = grouped_df['file_info'].apply(lambda x: x.sort_values().iloc[start_idx.iloc[0]:end_idx.iloc[0]])
+    
+    selected_filenames = selected_filenames.reset_index()
+  
+    # perform merge and deal with duplicate/unnecessary columns
+    df1 = df1.merge(selected_filenames, on=['patientID', 'series'], how='left') 
+    df_short = df1.drop(['file_info_x', 'img_num'], axis=1)
+    df_short = df_short.rename(columns={'file_info_y': 'file_info'})
+    df_short.drop_duplicates(inplace=True)
+    df_short.reset_index(drop=True, inplace=True)
+    return df_short
+
+
 
 # like shorten_df but does not adjust the dataframe, just returns the selected filenames
 def mask_one_from_series(df, selection_fraction=0.5):
@@ -431,16 +460,16 @@ def update_paths(df, old_base_path, new_base_path):
 
 
 
-def create_datasets(train_datafile, val_datafile, test_datafile, old_base_path=None, new_base_path=None):
+def create_datasets(train_datafile, val_datafile, test_datafile, old_base_path=None, new_base_path=None, selection_behavior='single_point', selection_fraction=0.5, a=0, b=1):
     # reads in the dataframes from csv
     train_full = pd.read_csv(train_datafile)
     val_full = pd.read_csv(val_datafile)
     test_full = pd.read_csv(test_datafile)
 
-    # selects the middle image from each series for further evaluation
-    train = shorten_df(train_full)
-    val = shorten_df(val_full)
-    test = shorten_df(test_full)
+    # selects the appropriate image or images from each series for further evaluation
+    train = shorten_df(train_full, selection_behavior, selection_fraction, a=0, b=1)
+    val = shorten_df(val_full, selection_behavior, selection_fraction, a=0, b=1)
+    test = shorten_df(test_full, selection_behavior, selection_fraction, a=0, b=1)
 
     # Update the paths
     train = update_paths(train, old_base_path, new_base_path)
@@ -455,3 +484,14 @@ def create_datasets(train_datafile, val_datafile, test_datafile, old_base_path=N
 
     return train_df, val_df, test_df
 
+def create_dataset(df, old_base_path=None, new_base_path=None, selection_behavior='single_point', selection_fraction=0.5, a=0, b=1):
+    # reads in the dataframes from csv
+    df1= pd.read_csv(df)
+    # selects the appropriate image or images from each series for further evaluation
+    df2 = shorten_df(df1, selection_behavior, selection_fraction, a=0, b=1)
+    # Update the paths
+    df2 = update_paths(df2, old_base_path, new_base_path)
+    # changes to the dataframe including adding contrast and computed plane columns
+    df3 = prepare_df(df2)
+
+    return df3

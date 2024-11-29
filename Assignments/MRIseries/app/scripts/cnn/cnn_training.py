@@ -10,16 +10,17 @@ import torchvision
 from torchvision import datasets, models, transforms
 from torch.utils.data import Dataset, DataLoader
 from torchvision.transforms import ToTensor
+import torch.nn.functional as F
 import time, copy, os
 from sklearn.metrics import confusion_matrix, classification_report
 
 # local imports
-from config import classes
+from ..config import classes
 from .cnn_model import CustomResNet50, CustomResNet50b, CustomDenseNet, FocalLoss
 from .cnn_inference import test_pix_model, pixel_inference
 from .cnn_data_loaders import get_data_loaders
 from .cnn_dataset import ImgDataset
-from utils import *
+from ..utils import *
 
 # Determine the device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -78,6 +79,8 @@ def train_cnn_model(model, dataloaders, criterion, optimizer, scheduler, num_epo
 
             epoch_loss = running_loss / len(dataloaders[phase].dataset)
             epoch_acc = running_corrects.double() / len(dataloaders[phase].dataset)
+            epoch_acc = epoch_acc.item() 
+            
             if phase == 'train':
                 history['train_loss'].append(epoch_loss)
                 history['train_acc'].append(epoch_acc)

@@ -4,7 +4,16 @@ from .cnn_dataset import ImgDataset
 import torchvision
 from torchvision import datasets, models, transforms
 from torch.utils.data import Dataset
+from torchvision.transforms import functional as F
+from PIL import Image
 
+class AdjustGamma(object):
+    def __init__(self, gamma, gain=1):
+        self.gamma = gamma
+        self.gain = gain
+
+    def __call__(self, img):
+        return F.adjust_gamma(img, self.gamma, self.gain)
 
 
 # Data cropping and normalization, also converts single channel to 3 channel for the model
@@ -36,8 +45,130 @@ data_transforms = {
     ])
 }
 
+data_transforms2 = {
+    'train': transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.Resize(299),
+        transforms.CenterCrop(299),
+        transforms.ColorJitter(brightness=0.4,contrast=0.5),
+        transforms.Grayscale(num_output_channels=3),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ]),
+    'val': transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.Resize(299),
+        transforms.CenterCrop(299),
+        transforms.Grayscale(num_output_channels=3),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ]),
+    'test': transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.Resize(299),
+        transforms.CenterCrop(299),
+        transforms.Grayscale(num_output_channels=3),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
+}
+
+data_transforms3 = {
+    'train': transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.Resize(299),
+        transforms.CenterCrop(299),
+        transforms.ColorJitter(brightness=0.4,contrast=0.5),
+        AdjustGamma(2.0), 
+        transforms.Grayscale(num_output_channels=3),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ]),
+    'val': transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.Resize(299),
+        transforms.CenterCrop(299),
+        AdjustGamma(2.0), 
+        transforms.Grayscale(num_output_channels=3),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ]),
+    'test': transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.Resize(299),
+        transforms.CenterCrop(299),
+        AdjustGamma(2.0), 
+        transforms.Grayscale(num_output_channels=3),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
+}
+
+data_transforms4 = {
+    'train': transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.Resize(299),
+        transforms.CenterCrop(299),
+        transforms.ColorJitter(brightness=0.4,contrast=0.5),
+        AdjustGamma(0.5), 
+        transforms.Grayscale(num_output_channels=3),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ]),
+    'val': transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.Resize(299),
+        transforms.CenterCrop(299),
+        AdjustGamma(0.5), 
+        transforms.Grayscale(num_output_channels=3),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ]),
+    'test': transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.Resize(299),
+        transforms.CenterCrop(299),
+        AdjustGamma(0.5), 
+        transforms.Grayscale(num_output_channels=3),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
+}
+
+data_transforms5 = {
+    'train': transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.Resize(299),
+        transforms.CenterCrop(299),
+        transforms.ColorJitter(brightness=0.4,contrast=0.5),
+        AdjustGamma(5.0), 
+        transforms.Grayscale(num_output_channels=3),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ]),
+    'val': transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.Resize(299),
+        transforms.CenterCrop(299),
+        AdjustGamma(5.0), 
+        transforms.Grayscale(num_output_channels=3),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ]),
+    'test': transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.Resize(299),
+        transforms.CenterCrop(299),
+        AdjustGamma(5.0), 
+        transforms.Grayscale(num_output_channels=3),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
+}
+
+
 # creates instances of the custom dataset with batch_size=batch_size
-def get_data_loaders(train, val, test, batch_size, shuffle=True, num_workers=0):
+def get_data_loaders(train, val, test, batch_size, data_transforms = data_transforms, shuffle=True, num_workers=0):
     # Create instances of your custom dataset
     train_imgdata = ImgDataset(train, data_transforms['train'])
     val_imgdata = ImgDataset(val, data_transforms['val'])
