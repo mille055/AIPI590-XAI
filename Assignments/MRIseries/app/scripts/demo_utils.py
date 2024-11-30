@@ -10,7 +10,7 @@ from PIL import Image, ImageDraw
 from glob import glob
 
 import sys
-
+from skimage.segmentation import mark_boundaries
 from scripts.process_tree import Processor 
 
 from scripts.config import *
@@ -142,7 +142,7 @@ def lime_predict_fn(images, model):
 
     return torch.nn.functional.softmax(outputs, dim=1).cpu().numpy()
 
-def get_lime_mask(image, model, lime_predict_fn, test_transform):
+def get_lime_mask(image, model, lime_predict_fn, test_transform, progress_callback=None):
     """
     Generate a LIME mask for an image.
 
@@ -157,6 +157,11 @@ def get_lime_mask(image, model, lime_predict_fn, test_transform):
     """
     # Initialize the LIME explainer
     explainer = LimeImageExplainer()
+
+    # Define a wrapper for progress updates
+    def progress_wrapper(current, total):
+        if progress_callback:
+            progress_callback(current, total)
 
     # Preprocess the image for the model
     image_pil = Image.fromarray(image).convert('RGB')  # Ensure RGB
@@ -175,7 +180,7 @@ def get_lime_mask(image, model, lime_predict_fn, test_transform):
     return mask
 
 
-def generate_lime_explanation(image, model, predict_fn, num_samples=1000):
+def generate_lime_explanation(image, model, predict_fn, num_samples=1000, progress_callback=None):
     """
     Generate a LIME explanation for the given image and model.
 
@@ -190,12 +195,18 @@ def generate_lime_explanation(image, model, predict_fn, num_samples=1000):
     """
     explainer = LimeImageExplainer()
 
+    # Define a wrapper for progress updates
+    def progress_wrapper(current, total):
+        if progress_callback:
+            progress_callback(current, total)
+
     explanation = explainer.explain_instance(
         image,  # The image to explain
         predict_fn,  # The model's prediction function
         top_labels=1,  # Number of top labels to explain
         hide_color=0,
-        num_samples=num_samples  # Number of samples to generate
+        num_samples=num_samples,  # Number of samples to generate
+        progress_bar=progress_wrapper
     )
 
     # Get the explanation for the top predicted label
@@ -210,3 +221,20 @@ def generate_lime_explanation(image, model, predict_fn, num_samples=1000):
     # Overlay LIME explanation on the image
     lime_overlay = mark_boundaries(lime_overlay, mask)
     return lime_overlay
+
+
+def normalize_to_255(image):
+    """
+    Normalize image pixel values to the range [0, 255].
+    
+    Args:
+        image (ndarray): Input image array.
+    
+    Returns:
+        ndarray: Normalized image.
+    """
+    image = image.astype(np.float32)  # Ensure the data type supports decimals
+    image -= image.min()  # Shift to make minimum 0
+    image /= image.max()  # Scale to make maximum 1
+    image *= 255  # Scale to range [0, 255]
+    return image.astype(np.uint8)  # Convert to 8-bit integers
