@@ -222,6 +222,43 @@ def generate_lime_explanation(image, model, predict_fn, num_samples=1000, progre
     lime_overlay = mark_boundaries(lime_overlay, mask)
     return lime_overlay
 
+def generate_colored_lime_mask(image, model, lime_predict_fn, num_samples=1000):
+    """
+    Generate a LIME mask with green and yellow coloring.
+
+    Args:
+        image (ndarray): The input image.
+        model (torch.nn.Module): The trained model.
+        lime_predict_fn (Callable): LIME-compatible prediction function.
+        num_samples (int): Number of perturbed samples.
+
+    Returns:
+        ndarray: Image with green and yellow LIME mask.
+    """
+    explainer = LimeImageExplainer()
+
+    # Generate the explanation
+    explanation = explainer.explain_instance(
+        image,
+        lambda imgs: lime_predict_fn(imgs, model),
+        top_labels=1,
+        hide_color=0,
+        num_samples=num_samples
+    )
+
+    # Get the mask with both positive (green) and negative (yellow) contributions
+    temp, mask = explanation.get_image_and_mask(
+        explanation.top_labels[0],  # Focus on the top predicted class
+        positive_only=False,       # Include both positive and negative contributions
+        num_features=10,           # Number of superpixels to highlight
+        hide_rest=False            # Keep the unimportant areas visible in grayscale
+    )
+
+    # Overlay the LIME mask on the original image
+    lime_overlay = mark_boundaries(temp, mask)
+
+    return lime_overlay
+
 
 def normalize_to_255(image):
     """
