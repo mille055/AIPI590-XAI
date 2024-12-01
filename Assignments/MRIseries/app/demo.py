@@ -14,7 +14,7 @@ from skimage.transform import resize
 
 
 from scripts.demo_utils import check_prediction_tag, load_dicom_data, apply_window_level, normalize_array, get_single_image_inference, generate_colored_lime_mask
-from scripts.demo_utils import extract_number_from_filename
+from scripts.demo_utils import extract_number_from_filename, lime_text
 from scripts.demo_utils import get_lime_mask, lime_predict_fn, normalize_to_255
 from  scripts.process_tree import Processor 
 from scripts.cnn.cnn_inference import *
@@ -186,8 +186,12 @@ if os.path.exists(start_folder) and os.path.isdir(start_folder):
                 # st.write(image_path)
                 predicted_type, predicted_confidence = get_single_image_inference(image_path, model)
                 st.write(f'Predicted type: {predicted_type}, confidence score: {predicted_confidence:.2f}')
-            
+            st.write(f'Explainable AI methods that may help to understand the model')
+            with st.expander("What is LIME and what does it tell me?"):
+                st.markdown(lime_text)
+
             get_lime_explanation = st.button("Generate LIME Explanation")
+                     
             if get_lime_explanation:
                 st.write('Generating LIME explanation. This may take a few minutes...')
                 if image_path:

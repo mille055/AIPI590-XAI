@@ -20,6 +20,8 @@ from scripts.cnn.cnn_inference import *
 from lime.lime_image import LimeImageExplainer
 from skimage.segmentation import mark_boundaries
 from skimage.transform import resize
+from alibi.explainers import AnchorImage
+from alibi.explainers import CounterFactual
 
 
 # Function to check if the image has been processed and return the value in the DICOM tag (0010, 1010)
@@ -207,7 +209,7 @@ def generate_colored_lime_mask(image, model, lime_predict_fn, test_transform, nu
     explanation = explainer.explain_instance(
         image_np,
         lambda imgs: lime_predict_fn(imgs, model),
-        top_labels=5,
+        top_labels=1,
         hide_color=0,
         num_samples=num_samples
     )
@@ -225,25 +227,6 @@ def generate_colored_lime_mask(image, model, lime_predict_fn, test_transform, nu
     lime_overlay = mark_boundaries(temp, mask)
     return lime_overlay
 
-    # Resize the LIME mask to match the original image dimensions
-    # original_shape = image.shape[:2]  # Get original image height and width
-    # resized_mask = resize(mask, original_shape, preserve_range=True, anti_aliasing=False).astype(int)
-
-    # # Create an overlay for coloring
-    # overlay = np.zeros_like(image, dtype=np.uint8)  # Initialize an empty overlay
-    # for i in range(1, resized_mask.max() + 1):  # Iterate over superpixel labels
-    #     region = resized_mask == i
-    #     if i in explanation.local_exp[explanation.top_labels[0]]:
-    #         weight = explanation.local_exp[explanation.top_labels[0]][i]
-    #         color = (0, 255, 0) if weight > 0 else (255, 255, 0)  # Green for positive, Yellow for negative
-    #         overlay[region] = color
-
-    # # Blend the overlay with the original image
-    # normalized_image = normalize_to_255(image)  # Normalize original image to [0, 255]
-    # blended_image = (0.6 * normalized_image + 0.4 * overlay).astype(np.uint8)  # Blend with some transparency
-
-    # return blended_image
-
 
 def normalize_to_255(image):
     """
@@ -260,3 +243,39 @@ def normalize_to_255(image):
     image /= image.max()  # Scale to make maximum 1
     image *= 255  # Scale to range [0, 255]
     return image.astype(np.uint8)  # Convert to 8-bit integers
+
+
+lime_text = """
+                    ### Understanding LIME (Local Interpretable Model-Agnostic Explanations)
+                    **LIME** is a technique used to interpret the predictions of machine learning models. It works by:
+                    
+                    1. **Perturbing the Input Image**: LIME creates several versions of the input image by modifying small parts (called superpixels) of the image.
+                    2. **Measuring the Model's Response**: For each perturbed version, LIME measures how much the model's prediction changes.
+                    3. **Identifying Important Regions**: Based on the model's response, LIME identifies the regions of the image that positively or negatively contributed to the prediction.
+
+                    ### What Do the Colors Mean?
+                    - **Green Regions**: These areas **support** the model's prediction. They have a positive influence on the model's confidence for the predicted class.
+                    - **Yellow Regions**: These areas **contradict** the model's prediction. They have a negative influence on the model's confidence for the predicted class.
+                    - **Uncolored Regions**: These areas have little or no impact on the model's decision.
+
+                    ### How to Interpret LIME Output
+                    The LIME explanation highlights the regions of the image that were most influential in the model's decision. This helps users:
+                    - Understand which features (e.g., anatomical regions in medical images) the model is focusing on.
+                    - Evaluate whether the model's prediction aligns with expert knowledge.
+                    - Detect potential biases or errors in the model.
+
+                    For example:
+                    - In an abdominal MRI, **green regions** might highlight a organ that supports the model's classification, while **yellow regions** could indicate artifacts that contradict it.
+
+                    ### Advantages of LIME Over Anchors or SHAP:
+                    - While Anchors provides rule-based explanations (e.g., "If this set of pixels is present, the model will always predict X"), LIME provides more detailed, graded explanations, showing how much each superpixel contributes to the final decision. This can be more insightful for image tasks where specific regions matter more than discrete "rules."
+                    - SHAP is generally slower than LIME, especially when applied to deep neural networks like DenseNet. SHAP calculates Shapley values, which can be computationally expensive because it considers all feature combinations. LIME, in contrast, is faster and less computationally intensive because it approximates the behavior of the model locally.
+                    - SHAP can give very precise pixel-level attributions, but these can be harder to interpret visually for non-technical users. LIME’s focus on superpixels gives you higher-level insights that are visually easier to comprehend.
+                    
+                    ### Limitations of LIME:
+                    - Local explanations may not generalize.
+                    - LIME creates a local surrogate model to explain the prediction, but these explanations are approximate and can vary with different perturbations. This means the results might not always be consistent across different runs, especially for images that are borderline cases.
+                    - LIME provides explanations for individual predictions, but it does not give you a global understanding of how the model behaves across the entire dataset, unlike SHAP, which can offer both global and local explanations.
+                    - Since LIME uses a linear surrogate model to approximate the complex decision boundary of DenseNet, it might oversimplify the true decision-making process of the neural network, especially for high-dimensional, non-linear image data.
+                    - LIME is slower than anchors for large images, and may require many perturbations to approximate the model’s behavior for a given image. For high-resolution images or large test sets, this can be computationally expensive and time-consuming, although it is typically faster than SHAP.
+            """
