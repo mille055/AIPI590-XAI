@@ -244,6 +244,75 @@ def normalize_to_255(image):
     image *= 255  # Scale to range [0, 255]
     return image.astype(np.uint8)  # Convert to 8-bit integers
 
+def anchors_predict_fn(images, model, device):
+    """
+    Prediction function compatible with the Anchors explainer.
+
+    Args:
+        images (ndarray): Batch of images as numpy arrays (H, W, C).
+        model (torch.nn.Module): The trained PyTorch model.
+        device (torch.device): The device (CPU/GPU) where the model is running.
+
+    Returns:
+        ndarray: Softmax probabilities for each class.
+    """
+    images = torch.tensor(images.transpose(0, 3, 1, 2)).float().to(device)  # Convert to (batch_size, channels, H, W)
+
+    with torch.no_grad():
+        outputs = model(images)
+
+    return torch.nn.functional.softmax(outputs, dim=1).cpu().numpy()
+
+def generate_anchor_explanation(image, model, device, explainer, abd_label_dict):
+    """
+    Generate an Anchors explanation for a given image.
+
+    Args:
+        image (ndarray): The input image (H, W, C).
+        model (torch.nn.Module): The trained model.
+        device (torch.device): The device (CPU/GPU) where the model is running.
+        explainer (AnchorImage): An initialized AnchorImage explainer.
+        abd_label_dict (dict): A dictionary mapping class indices to labels.
+
+    Returns:
+        dict: Anchors explanation object.
+        ndarray: The Anchors explanation segments.
+    """
+    # Ensure the image is in the correct shape
+    if len(image.shape) == 2:  # If grayscale, convert to RGB
+        image = np.stack([image] * 3, axis=-1)
+    
+    # Normalize the image for the model
+    normalized_image = (image / 255.0).astype(np.float32)
+
+    # Run the Anchors explanation
+    explanation = explainer.explain(normalized_image)
+
+    # Map the predicted class to its label
+    predicted_class = np.argmax(explanation['anchor_probs'])
+    class_label = abd_label_dict.get(str(predicted_class), "Unknown")
+
+    return explanation, class_label
+
+def visualize_anchor_explanation(image, explanation, title="Anchor Explanation"):
+    """
+    Visualize the Anchors explanation.
+
+    Args:
+        image (ndarray): The input image (H, W, C).
+        explanation (dict): The Anchors explanation object.
+
+    Returns:
+        matplotlib figure: The image with Anchors explanation overlay.
+    """
+    # Generate the visualization with mark_boundaries
+    fig, ax = plt.subplots()
+    ax.imshow(mark_boundaries(image, explanation['segments'].astype(int)))
+    ax.set_title(title)
+    ax.axis("off")
+    return fig
+
+
 
 lime_text = """
                     ### Understanding LIME (Local Interpretable Model-Agnostic Explanations)

@@ -11,8 +11,9 @@ from glob import glob
 import sys
 from skimage.segmentation import mark_boundaries
 from skimage.transform import resize
+from alibi.explainers import AnchorImage
 
-
+from scripts.demo_utils import anchors_predict_fn, generate_anchor_explanation, visualize_anchor_explanation
 from scripts.demo_utils import check_prediction_tag, load_dicom_data, apply_window_level, normalize_array, get_single_image_inference, generate_colored_lime_mask
 from scripts.demo_utils import extract_number_from_filename, lime_text
 from scripts.demo_utils import get_lime_mask, lime_predict_fn, normalize_to_255
@@ -21,11 +22,7 @@ from scripts.cnn.cnn_inference import *
 from  scripts.config import *
 from scripts.utils import *
 
-test_transform = transforms.Compose([
-    transforms.Resize((299, 299)),  # Match the model input size
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-])
+
 
 #from azure.storage.blob import BlobServiceClient
 
@@ -43,6 +40,17 @@ st.subheader("Duke AIPI590-XAI Final Project")
 st.write("Chad Miller")
 
 model = load_pixel_model('models/best_0606.pth', model_type='DenseNet')
+
+test_transform = transforms.Compose([
+    transforms.Resize((299, 299)),  # Match the model input size
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+])
+
+anchor_explainer = AnchorImage(
+    predictor=lambda x: anchors_predict_fn(x, model, next(model.parameters()).device),
+    image_shape=(299, 299, 3)
+)
 
 # the place to find the image data
 start_folder = "/volumes/cm7/start_folder"
@@ -234,7 +242,33 @@ if os.path.exists(start_folder) and os.path.isdir(start_folder):
                 else:
                     st.warning("Please select an image.")
 
-           
+            generate_anchors = st.button("Generate Anchors Explanation")
+
+            if generate_anchors:
+                if image_path:
+                    try:
+                        # Load the DICOM image
+                        ds = pydicom.dcmread(image_path)
+                        image = ds.pixel_array
+
+                        # Generate the Anchors explanation
+                        explanation, class_label = generate_anchor_explanation(
+                            image=image,
+                            model=model,
+                            device=next(model.parameters()).device,
+                            explainer=anchor_explainer,
+                            abd_label_dict=abd_label_dict
+                        )
+
+                        # Visualize the explanation
+                        fig = visualize_anchor_explanation(image, explanation, title=f"Anchor Explanation for Class: {class_label}")
+                        st.pyplot(fig)
+
+                    except Exception as e:
+                        st.error(f"Error generating Anchors explanation: {e}")
+                else:
+                    st.warning("Please select an image.")
+
         else:
             st.warning("No DICOM files found in the folder.")
 else:
