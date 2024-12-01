@@ -19,7 +19,7 @@ from scripts.cnn.cnn_inference import *
 
 from lime.lime_image import LimeImageExplainer
 from skimage.segmentation import mark_boundaries
-
+from skimage.transform import resize
 
 
 # Function to check if the image has been processed and return the value in the DICOM tag (0010, 1010)
@@ -180,49 +180,49 @@ def get_lime_mask(image, model, lime_predict_fn, test_transform, progress_callba
     return mask
 
 
-def generate_lime_explanation(image, model, predict_fn, num_samples=1000, progress_callback=None):
-    """
-    Generate a LIME explanation for the given image and model.
+# def generate_lime_explanation(image, model, predict_fn, num_samples=1000, progress_callback=None):
+#     """
+#     Generate a LIME explanation for the given image and model.
 
-    Args:
-        image (ndarray): The input image to explain.
-        model (Callable): The prediction model.
-        predict_fn (Callable): A prediction function that matches LIME's expected input.
-        num_samples (int): Number of perturbed samples to generate for LIME.
+#     Args:
+#         image (ndarray): The input image to explain.
+#         model (Callable): The prediction model.
+#         predict_fn (Callable): A prediction function that matches LIME's expected input.
+#         num_samples (int): Number of perturbed samples to generate for LIME.
 
-    Returns:
-        ndarray: Image with LIME overlay.
-    """
-    explainer = LimeImageExplainer()
+#     Returns:
+#         ndarray: Image with LIME overlay.
+#     """
+#     explainer = LimeImageExplainer()
 
-    # Define a wrapper for progress updates
-    def progress_wrapper(current, total):
-        if progress_callback:
-            progress_callback(current, total)
+#     # Define a wrapper for progress updates
+#     def progress_wrapper(current, total):
+#         if progress_callback:
+#             progress_callback(current, total)
 
-    explanation = explainer.explain_instance(
-        image,  # The image to explain
-        predict_fn,  # The model's prediction function
-        top_labels=1,  # Number of top labels to explain
-        hide_color=0,
-        num_samples=num_samples,  # Number of samples to generate
-        progress_bar=progress_wrapper
-    )
+#     explanation = explainer.explain_instance(
+#         image,  # The image to explain
+#         predict_fn,  # The model's prediction function
+#         top_labels=1,  # Number of top labels to explain
+#         hide_color=0,
+#         num_samples=num_samples,  # Number of samples to generate
+#         progress_bar=progress_wrapper
+#     )
 
-    # Get the explanation for the top predicted label
-    top_label = explanation.top_labels[0]
-    lime_overlay, mask = explanation.get_image_and_mask(
-        top_label,
-        positive_only=False,
-        num_features=10,
-        hide_rest=False
-    )
+#     # Get the explanation for the top predicted label
+#     top_label = explanation.top_labels[0]
+#     lime_overlay, mask = explanation.get_image_and_mask(
+#         top_label,
+#         positive_only=False,
+#         num_features=10,
+#         hide_rest=False
+#     )
 
-    # Overlay LIME explanation on the image
-    lime_overlay = mark_boundaries(lime_overlay, mask)
-    return lime_overlay
+#     # Overlay LIME explanation on the image
+#     lime_overlay = mark_boundaries(lime_overlay, mask)
+#     return lime_overlay
 
-def generate_colored_lime_mask(image, model, lime_predict_fn, num_samples=1000):
+def generate_colored_lime_mask(image, model, lime_predict_fn, test_transform, num_samples=1000):
     """
     Generate a LIME mask with green and yellow coloring.
 
@@ -231,12 +231,19 @@ def generate_colored_lime_mask(image, model, lime_predict_fn, num_samples=1000):
         model (torch.nn.Module): The trained model.
         lime_predict_fn (Callable): LIME-compatible prediction function.
         num_samples (int): Number of perturbed samples.
+        test_transform (transforms.Compose): The test transform pipeline.
 
     Returns:
         ndarray: Image with green and yellow LIME mask.
     """
     explainer = LimeImageExplainer()
 
+    # Preprocess the image for model inference
+    image_pil = Image.fromarray(image).convert('RGB')  # Ensure RGB
+    processed_image = test_transform(image_pil).unsqueeze(0).to(next(model.parameters()).device)
+    image_np = processed_image.squeeze(0).permute(1, 2, 0).cpu().numpy()
+    print('image_np', image_np.shape)
+    
     # Generate the explanation
     explanation = explainer.explain_instance(
         image,
@@ -254,10 +261,29 @@ def generate_colored_lime_mask(image, model, lime_predict_fn, num_samples=1000):
         hide_rest=False            # Keep the unimportant areas visible in grayscale
     )
 
+
     # Overlay the LIME mask on the original image
     lime_overlay = mark_boundaries(temp, mask)
-
     return lime_overlay
+
+    # Resize the LIME mask to match the original image dimensions
+    # original_shape = image.shape[:2]  # Get original image height and width
+    # resized_mask = resize(mask, original_shape, preserve_range=True, anti_aliasing=False).astype(int)
+
+    # # Create an overlay for coloring
+    # overlay = np.zeros_like(image, dtype=np.uint8)  # Initialize an empty overlay
+    # for i in range(1, resized_mask.max() + 1):  # Iterate over superpixel labels
+    #     region = resized_mask == i
+    #     if i in explanation.local_exp[explanation.top_labels[0]]:
+    #         weight = explanation.local_exp[explanation.top_labels[0]][i]
+    #         color = (0, 255, 0) if weight > 0 else (255, 255, 0)  # Green for positive, Yellow for negative
+    #         overlay[region] = color
+
+    # # Blend the overlay with the original image
+    # normalized_image = normalize_to_255(image)  # Normalize original image to [0, 255]
+    # blended_image = (0.6 * normalized_image + 0.4 * overlay).astype(np.uint8)  # Blend with some transparency
+
+    # return blended_image
 
 
 def normalize_to_255(image):

@@ -15,7 +15,7 @@ from skimage.transform import resize
 
 from scripts.demo_utils import check_prediction_tag, load_dicom_data, apply_window_level, normalize_array, get_single_image_inference, generate_colored_lime_mask
 from scripts.demo_utils import extract_number_from_filename
-from scripts.demo_utils import generate_lime_explanation, get_lime_mask, lime_predict_fn, normalize_to_255
+from scripts.demo_utils import get_lime_mask, lime_predict_fn, normalize_to_255
 from  scripts.process_tree import Processor 
 from scripts.cnn.cnn_inference import *
 from  scripts.config import *
@@ -198,7 +198,7 @@ if os.path.exists(start_folder) and os.path.isdir(start_folder):
                         image=normalize_to_255(image)
                         
                         # Generate the LIME explanation with green and yellow coloring
-                        lime_colored_mask = generate_colored_lime_mask(image, model, lime_predict_fn)
+                        lime_colored_mask = generate_colored_lime_mask(image, model, lime_predict_fn, test_transform)
 
                         # Display the LIME explanation
                         st.image(lime_colored_mask, caption="LIME Explanation (Green: Positive, Red: Negative)", use_container_width=True)
