@@ -181,7 +181,7 @@ if os.path.exists(start_folder) and os.path.isdir(start_folder):
 
                 new_processed_df = processor.pipeline_new_studies()
           
-            get_inference = st.button("Get Inference For This Image")
+            get_inference = st.button("Get Predicted Class For This Image")
             if get_inference:
                 # st.write(image_path)
                 predicted_type, predicted_confidence = get_single_image_inference(image_path, model)
@@ -189,7 +189,7 @@ if os.path.exists(start_folder) and os.path.isdir(start_folder):
             
             get_lime_explanation = st.button("Generate LIME Explanation")
             if get_lime_explanation:
-                
+                st.write('Generating LIME explanation. This may take a few minutes...')
                 if image_path:
                     try:
                         # Load the DICOM image
@@ -198,7 +198,7 @@ if os.path.exists(start_folder) and os.path.isdir(start_folder):
                         image=normalize_to_255(image)
                         
                         # Generate the LIME explanation with green and yellow coloring
-                        lime_colored_mask = generate_colored_lime_mask(image, model, lime_predict_fn, test_transform)
+                        lime_colored_mask = generate_colored_lime_mask(image, model, lime_predict_fn, test_transform=test_transform)
 
                         # Display the LIME explanation
                         st.image(lime_colored_mask, caption="LIME Explanation (Green: Positive, Red: Negative)", use_container_width=True)
@@ -207,24 +207,24 @@ if os.path.exists(start_folder) and os.path.isdir(start_folder):
                         progress_bar = st.progress(0)
 
                         def update_progress(current, total):
-                            progress = int((current / total) * 100)
-                            progress_bar.progress(progress)
+                             progress = int((current / total) * 100)
+                             progress_bar.progress(progress)
 
-                        # Run LIME and get the mask
-                        lime_mask = get_lime_mask(image, model, lime_predict_fn, test_transform, progress_callback=update_progress)
+                        # # Run LIME and get the mask
+                        # lime_mask = get_lime_mask(image, model, lime_predict_fn, test_transform, progress_callback=update_progress)
 
-                         # Resize the LIME mask if necessary
-                        if lime_mask.shape != image.shape[:2]:
-                            lime_mask_resized = resize(lime_mask, image.shape[:2], preserve_range=True).astype(int)
-                        else:
-                            lime_mask_resized = lime_mask
+                        #  # Resize the LIME mask if necessary
+                        # if lime_mask.shape != image.shape[:2]:
+                        #     lime_mask_resized = resize(lime_mask, image.shape[:2], preserve_range=True).astype(int)
+                        # else:
+                        #     lime_mask_resized = lime_mask
 
-                        # Superimpose the LIME mask
-                        superimposed_image = mark_boundaries(image, lime_mask_resized)
+                        # # Superimpose the LIME mask
+                        # superimposed_image = mark_boundaries(image, lime_mask_resized)
                 
 
-                        # Display the LIME explanation
-                        st.image(superimposed_image, caption="LIME Explanation", use_container_width=True)
+                        # # Display the LIME explanation
+                        # st.image(superimposed_image, caption="LIME Explanation", use_container_width=True)
                     except Exception as e:
                         st.error(f"Error generating LIME explanation: {e}")
                 else:

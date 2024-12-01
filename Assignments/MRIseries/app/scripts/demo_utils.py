@@ -179,49 +179,6 @@ def get_lime_mask(image, model, lime_predict_fn, test_transform, progress_callba
 
     return mask
 
-
-# def generate_lime_explanation(image, model, predict_fn, num_samples=1000, progress_callback=None):
-#     """
-#     Generate a LIME explanation for the given image and model.
-
-#     Args:
-#         image (ndarray): The input image to explain.
-#         model (Callable): The prediction model.
-#         predict_fn (Callable): A prediction function that matches LIME's expected input.
-#         num_samples (int): Number of perturbed samples to generate for LIME.
-
-#     Returns:
-#         ndarray: Image with LIME overlay.
-#     """
-#     explainer = LimeImageExplainer()
-
-#     # Define a wrapper for progress updates
-#     def progress_wrapper(current, total):
-#         if progress_callback:
-#             progress_callback(current, total)
-
-#     explanation = explainer.explain_instance(
-#         image,  # The image to explain
-#         predict_fn,  # The model's prediction function
-#         top_labels=1,  # Number of top labels to explain
-#         hide_color=0,
-#         num_samples=num_samples,  # Number of samples to generate
-#         progress_bar=progress_wrapper
-#     )
-
-#     # Get the explanation for the top predicted label
-#     top_label = explanation.top_labels[0]
-#     lime_overlay, mask = explanation.get_image_and_mask(
-#         top_label,
-#         positive_only=False,
-#         num_features=10,
-#         hide_rest=False
-#     )
-
-#     # Overlay LIME explanation on the image
-#     lime_overlay = mark_boundaries(lime_overlay, mask)
-#     return lime_overlay
-
 def generate_colored_lime_mask(image, model, lime_predict_fn, test_transform, num_samples=1000):
     """
     Generate a LIME mask with green and yellow coloring.
@@ -242,13 +199,15 @@ def generate_colored_lime_mask(image, model, lime_predict_fn, test_transform, nu
     image_pil = Image.fromarray(image).convert('RGB')  # Ensure RGB
     processed_image = test_transform(image_pil).unsqueeze(0).to(next(model.parameters()).device)
     image_np = processed_image.squeeze(0).permute(1, 2, 0).cpu().numpy()
-    print('image_np', image_np.shape)
-    
+    image_np = (image_np - image_np.min()) / (image_np.max() - image_np.min())
+    print(f"image_np shape: {image_np.shape}, min: {image_np.min()}, max: {image_np.max()}")
+    print(f"image_np dtype: {image_np.dtype}")
+
     # Generate the explanation
     explanation = explainer.explain_instance(
-        image,
+        image_np,
         lambda imgs: lime_predict_fn(imgs, model),
-        top_labels=1,
+        top_labels=5,
         hide_color=0,
         num_samples=num_samples
     )
