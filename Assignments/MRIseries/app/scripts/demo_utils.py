@@ -263,7 +263,7 @@ def anchors_predict_fn(images, model, device):
 
     return torch.nn.functional.softmax(outputs, dim=1).cpu().numpy()
 
-def generate_anchor_explanation(image, model, device, explainer, abd_label_dict):
+def generate_anchor_explanation(image, model, device, explainer, abd_label_dict, test_transform=None):
     """
     Generate an Anchors explanation for a given image.
 
@@ -278,18 +278,24 @@ def generate_anchor_explanation(image, model, device, explainer, abd_label_dict)
         dict: Anchors explanation object.
         ndarray: The Anchors explanation segments.
     """
-    # Ensure the image is in the correct shape
-    if len(image.shape) == 2:  # If grayscale, convert to RGB
-        image = np.stack([image] * 3, axis=-1)
+    image_pil = Image.fromarray(image).convert('RGB')  # Ensure RGB
+    processed_image = test_transform(image_pil).unsqueeze(0).to(next(model.parameters()).device)
+    image_np = processed_image.squeeze(0).permute(1, 2, 0).cpu().numpy()
+    image_np = (image_np - image_np.min()) / (image_np.max() - image_np.min())
+    print(f"image_np shape: {image_np.shape}, min: {image_np.min()}, max: {image_np.max()}")
+    print(f"image_np dtype: {image_np.dtype}")
     
+
     # Normalize the image for the model
-    normalized_image = (image / 255.0).astype(np.float32)
+    normalized_image = (image_np / 255.0).astype(np.float32)
 
     # Run the Anchors explanation
-    explanation = explainer.explain(normalized_image)
+    explanation = explainer.explain(normalized_image, threshold=0.90)
+    print('explanation:', explanation)
 
     # Map the predicted class to its label
     predicted_class = np.argmax(explanation['anchor_probs'])
+    print('predicted_class:', predicted_class)
     class_label = abd_label_dict.get(str(predicted_class), "Unknown")
 
     return explanation, class_label

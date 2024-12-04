@@ -49,8 +49,13 @@ test_transform = transforms.Compose([
 
 anchor_explainer = AnchorImage(
     predictor=lambda x: anchors_predict_fn(x, model, next(model.parameters()).device),
-    image_shape=(299, 299, 3)
-)
+    image_shape=(299, 299, 3))
+
+# anchor_explainer.set_config(
+#     disc_perc=(10, 90),  # Set discretization percentiles
+#     n_covered_ex=1000,   # Increase the number of samples for better coverage
+#     threshold=0.90       # Relax the precision threshold
+# )
 
 # the place to find the image data
 start_folder = "/volumes/cm7/start_folder"
@@ -241,9 +246,9 @@ if os.path.exists(start_folder) and os.path.isdir(start_folder):
                         st.error(f"Error generating LIME explanation: {e}")
                 else:
                     st.warning("Please select an image.")
-
+            
+            # Generate Anchors explanation
             generate_anchors = st.button("Generate Anchors Explanation")
-
             if generate_anchors:
                 if image_path:
                     try:
@@ -257,7 +262,8 @@ if os.path.exists(start_folder) and os.path.isdir(start_folder):
                             model=model,
                             device=next(model.parameters()).device,
                             explainer=anchor_explainer,
-                            abd_label_dict=abd_label_dict
+                            abd_label_dict=abd_label_dict,
+                            test_transform=test_transform
                         )
 
                         # Visualize the explanation
