@@ -13,9 +13,9 @@ Accurate automated series identification of abdominal MRI series is important fo
 
 Note that with respect to ‘hanging’ protocols in PACS, this is typically performed using rules-based processes using the series description text and/or parameter values (T1, T2 settings) and may have problems when encountering data with variation (such as for reviewing a non-Duke study, see Figure 1 below). When the hanging protocol fails and there are several empty panels, this requires that the Radiologist finds them which is less efficient, and may cause him/her to not identify series of images which could lead to missed or incorrect diagnoses. 
 
-Figure 1: On top is a typical PACS display with the hanging protocol for a Duke study, and on the bottom is the hanging of a non-Duke study with several empty panels.
+### Figure 1:### On top is a typical PACS display with the hanging protocol for a Duke study, and on the bottom is the hanging of a non-Duke study with several empty panels.
 ![pacsgood](app/assets/pacsgood.png)
-### outside study:
+Outside study:
 ![pacbsbad](app/assets/pacsbad.png)
 
 
@@ -35,19 +35,54 @@ The dataset is identical to that reported in [3] and contains scans from multipl
 
 ## Methods and Results:
 ### Data Preparation
-A single image from each series was selected to create the dataset (particularly, the middle image in a sorted series) rather than the entire dataset as described above. As the image names are sequential within each series, the middle image corresponds to anatomy in the center of the series (midway between top and bottom images in an axial series); choosing the middle image of each series has benefit in that it avoids artifact and poor image quality more frequently found in the first few and last few images of a series. Transfer learning models with common model architectures trained with ImageNet weights were used. Image filenames for the chosen image from each series were stored in .csv files.  A custom dataset class extracted the pixel information using pydicom and dataloaders prepared batches of images (16 typically). Image transformations were applied to the normalized pixel values to produce tensors of the appropriate size and shape. As the original data was in grayscale, the preprocessing included a transformation for conversion to 3 channels.  For data augmentation, care was taken to avoid transformations such as horizontal or vertical flipping which would alter the fundamental semantic meaning of the anatomy. Resizing and center cropping were used, either with or without the addition of color jitter transformations which were added to help reduce overfitting. The model was provided images of dimension Batch x 3 x 229 x 229, appropriate for both the ResNet50 and DenseNet121 architectures.
+* A single representative image (the middle image) was selected from each series.
+* Images were resized to 299 x 299 x 3 (converted from grayscale to RGB), normalized, and transformed for input to the DenseNet121 model.
+* Data augmentation included resizing, center cropping, and optional color jitter, ensuring semantic consistency with anatomical features.
+### Model Architectures
+DenseNet121 with transfer learning using ImageNet weights, Adam optimizer, and a custom Focal Loss. 
 
-### Model Architecture:
-The initial baseline model was a ResNet50 model with ImageNet weights and replacement of the top layer by a single fully connected layer for the 19 classes. In addition to the baseline model, other architectures that used for transfer learning included a ResNet50 model with a more complicated architecture added as the head consisting of two linear layers with an intervening ReLU layer (labeled as ResNet50b), and DenseNet121. The multilayer classifier head in ResNet50b was explored as it was postulated the additional fully connected layers and the non-linear activations could enable the model to learn more complex representations from the ResNet50 features, potentially important for the classification task. DenseNet architecture, based on the concept of dense blocks consisting of multiple layers connected in a dense manner--with each layer receiving feature maps from all preceding layers--was chosen for the possibility that the the dense connectivity could capture fine-grained details within the medical images. Different optimizers (Adam and SGD) and loss functions (Cross Entropy and Focal Loss) were explored, as well as the use of gamma filters as a preprocessing step. 
+### Results
+Overall accuracy of 91% on the test dataset. The cofusion matrix is shown below:
+![img](app/assets/FigPixel20230412.png)
 
-### Results:
-With the combination of DenseNet121, Adam, Focal Loss, the accuracy on the test dataset is 91%. The confusion matrix is shown below:
-![img](/assets/Test_dataset_on_best_model0530.png)
+## Explainable AI Techniques
 
+1. LIME (Local Interpretable Model-Agnostic Explanations)
 
+LIME is used to interpret model predictions by identifying regions in the image that positively or negatively influence the predicted class.
 
-## Metadata Classifier
-The metadata classifier is a RandomForest model. A grid search is used to tune hyperparameters, and the model is trained on the resultant optimized model. This can be quickly trained on a cpu, and has fairly high accruacy for many of the types of images. It does not, however, do well classifying post contrast series (e.g., portal venous phase, arterial, equilibrium) nor the precontrast series (T1 fat sat) that is performed with identical imaging parameters to the post contrast images. 
+How it Works:
+* Perturbs the input image by modifying small parts (superpixels).
+* Evaluates the model’s response to these perturbations.
+* Highlights regions that strongly support (green) or contradict (yellow) the model’s decision.
+* Use Case: In the demo, users can generate LIME explanations for individual images, providing visual insights into why the model assigned a particular series label.
+* Advantages:
+** Provides visually intuitive superpixel-level explanations.
+** Useful for validating whether the model’s predictions align with clinical expectations.
+
+2. Anchors
+
+Anchors provide rule-based explanations by identifying sets of features (superpixels) that are sufficient to guarantee the same prediction, regardless of perturbations to the rest of the image.
+
+How it Works:
+Segments the image into superpixels.
+Identifies "anchor" superpixels that are crucial for the model's prediction.
+Use Case: In the demo, users can visualize anchor superpixels for an image to understand which regions were indispensable for the prediction.
+Advantages:
+Provides binary "if-then" rules that are easy to interpret.
+Useful for identifying critical regions that drive predictions.
+3. SHAP (SHapley Additive exPlanations)
+
+SHAP provides pixel-level attributions, quantifying how each pixel contributes to the final prediction.
+
+How it Works:
+Calculates Shapley values for each feature (pixel).
+Aggregates these values to show positive or negative contributions.
+Use Case: SHAP explanations can be computed for individual predictions, offering a highly detailed view of feature importance.
+Advantages:
+Offers both global and local explanations.
+Provides quantitative attributions, useful for detailed analysis.
+
 
 
 ## How to install and use the repository code
