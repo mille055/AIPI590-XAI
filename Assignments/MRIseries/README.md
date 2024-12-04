@@ -13,7 +13,8 @@ Accurate automated series identification of abdominal MRI series is important fo
 
 Note that with respect to ‘hanging’ protocols in PACS, this is typically performed using rules-based processes using the series description text and/or parameter values (T1, T2 settings) and may have problems when encountering data with variation (such as for reviewing a non-Duke study, see Figure 1 below). When the hanging protocol fails and there are several empty panels, this requires that the Radiologist finds them which is less efficient, and may cause him/her to not identify series of images which could lead to missed or incorrect diagnoses. 
 
-### Figure 1:### On top is a typical PACS display with the hanging protocol for a Duke study, and on the bottom is the hanging of a non-Duke study with several empty panels.
+Figure 1: On top is a typical PACS display with the hanging protocol for a Duke study, and on the bottom is the hanging of a non-Duke study with several empty panels.
+Duke study:
 ![pacsgood](app/assets/pacsgood.png)
 Outside study:
 ![pacbsbad](app/assets/pacsbad.png)
@@ -53,36 +54,40 @@ LIME is used to interpret model predictions by identifying regions in the image 
 
 How it Works:
 * Perturbs the input image by modifying small parts (superpixels).
-* Evaluates the model’s response to these perturbations.
-* Highlights regions that strongly support (green) or contradict (yellow) the model’s decision.
-* Use Case: In the demo, users can generate LIME explanations for individual images, providing visual insights into why the model assigned a particular series label.
-* Advantages:
-** Provides visually intuitive superpixel-level explanations.
-** Useful for validating whether the model’s predictions align with clinical expectations.
+* Evaluates the model’s response to perturbed versions of the input image by slightly modifying regions (called superpixels). Fits a simple, interpretable surrogate model—often a linear decision boundary—to approximate the complex behavior of the original model in the local neighborhood of the prediction, as shown in the image below.
+* Highlights regions that strongly support (green) or contradict (red) the model’s decision.
+
+![img](app/assets/lime%20schematic.png)
+
+Use Case: In the demo, users can generate LIME explanations for individual images, providing visual insights into why the model assigned a particular series label.
+
+Advantages:
+* Provides visually intuitive superpixel-level explanations.
+* Useful for validating whether the model’s predictions align with clinical expectations.
 
 2. Anchors
 
 Anchors provide rule-based explanations by identifying sets of features (superpixels) that are sufficient to guarantee the same prediction, regardless of perturbations to the rest of the image.
 
 How it Works:
-Segments the image into superpixels.
-Identifies "anchor" superpixels that are crucial for the model's prediction.
+* Segments the image into superpixels.
+* Identifies "anchor" superpixels that are crucial for the model's prediction.
 Use Case: In the demo, users can visualize anchor superpixels for an image to understand which regions were indispensable for the prediction.
 Advantages:
-Provides binary "if-then" rules that are easy to interpret.
-Useful for identifying critical regions that drive predictions.
+* Provides binary "if-then" rules that are easy to interpret.
+* Useful for identifying critical regions that drive predictions.
+
 3. SHAP (SHapley Additive exPlanations)
 
 SHAP provides pixel-level attributions, quantifying how each pixel contributes to the final prediction.
 
 How it Works:
-Calculates Shapley values for each feature (pixel).
-Aggregates these values to show positive or negative contributions.
+* Calculates Shapley values for each feature (pixel).
+* Aggregates these values to show positive or negative contributions.
 Use Case: SHAP explanations can be computed for individual predictions, offering a highly detailed view of feature importance.
 Advantages:
-Offers both global and local explanations.
-Provides quantitative attributions, useful for detailed analysis.
-
+* Offers both global and local explanations.
+* Provides quantitative attributions, useful for detailed analysis.
 
 
 ## How to install and use the repository code
