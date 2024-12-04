@@ -15,6 +15,7 @@ Note that with respect to ‘hanging’ protocols in PACS, this is typically per
 
 Figure 1: On top is a typical PACS display with the hanging protocol for a Duke study, and on the bottom is the hanging of a non-Duke study with several empty panels.
 ![pacsgood](app/assets/pacsgood.png)
+### outside study:
 ![pacbsbad](app/assets/pacsbad.png)
 
 
