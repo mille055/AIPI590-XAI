@@ -271,7 +271,7 @@ if os.path.exists(start_folder) and os.path.isdir(start_folder):
                         with col1:
                             st.image(gradcam_overlay, caption="Grad-CAM Explanation (Red: High Importance, Blue: Low Importance)", use_container_width=True)                   
                         with col2:
-                            st.image(lime_colored_mask, caption="LIME Explanation (Green: Positive, Yellow: Negative)", use_container_width=True)
+                            st.image(lime_colored_mask, caption="LIME Explanation (Green: Positive, Red: Negative)", use_container_width=True)
                 
                     except Exception as e:
                         st.error(f"Error generating LIME explanation: {e}")
