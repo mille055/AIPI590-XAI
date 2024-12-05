@@ -48,22 +48,12 @@ test_transform = transforms.Compose([
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
-anchor_explainer = AnchorImage(
-    predictor=lambda x: anchors_predict_fn(x, model, next(model.parameters()).device),
-    image_shape=(299, 299, 3))
-
-# anchor_explainer.set_config(
-#     disc_perc=(10, 90),  # Set discretization percentiles
-#     n_covered_ex=1000,   # Increase the number of samples for better coverage
-#     threshold=0.90       # Relax the precision threshold
-# )
-
 # the place to find the image data
-start_folder = "/volumes/cm7/start_folder"
+start_folder = "/app/data"
 #start_folder = os.environ.get("SOURCE_DATA_PATH")
 
 # the place to put processed image data
-destination_folder = '../../volumes/cm7/start_folder'
+destination_folder = '/app/data'
 destination_folder = st.sidebar.text_input("Enter destination folder path:", value="")
 #destination_folder = os.environ.get("SOURCE_DATA_PATH")
 
