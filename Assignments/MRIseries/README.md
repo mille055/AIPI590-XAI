@@ -50,7 +50,7 @@ Overall accuracy of 91% on the test dataset. The cofusion matrix is shown below:
 
 ## Explainable AI Techniques
 
-1. LIME (Local Interpretable Model-Agnostic Explanations)
+### LIME (Local Interpretable Model-Agnostic Explanations)
 
 LIME is used to interpret model predictions by identifying regions in the image that positively or negatively influence the predicted class.
 
@@ -59,15 +59,15 @@ How it Works:
 * Evaluates the model’s response to perturbed versions of the input image by slightly modifying regions (called superpixels). Fits a simple, interpretable surrogate model—often a linear decision boundary—to approximate the complex behavior of the original model in the local neighborhood of the prediction, as shown in the image below.
 * Highlights regions that strongly support (green) or contradict (red) the model’s decision.
 
-![img](app/assets/lime%20schematic.png)
-
 Use Case: In the demo, users can generate LIME explanations for individual images, providing visual insights into why the model assigned a particular series label.
 
 Advantages:
 * Provides visually intuitive superpixel-level explanations.
 * Useful for validating whether the model’s predictions align with clinical expectations.
 
-2. Grad-CAM (Gradient-weighted Class Activation Mapping)
+![img](app/assets/lime%20schematic.png)
+
+### Grad-CAM (Gradient-weighted Class Activation Mapping)
 Grad-CAM provides a visual explanation of a model’s decision by highlighting the regions in an image that are most influential for a specific class prediction.
 
 How it Works:
@@ -89,16 +89,26 @@ Advantages:
 Complementary Role with LIME:
 While LIME explains predictions using localized perturbations and linear approximations, Grad-CAM focuses on the internal feature importance within the neural network. Together, they provide a comprehensive understanding of model behavior, balancing internal and external perspectives.
 
+### Examples
+For the first example, it is a portal venous phase image for which the entire series is incorrectly labeled by the model as an arterial phase series (which is very similar) and the inference for the individual image has label t2 with low confidence. 
+[img](app/assets/pv_prediction_image.png)
+
+For the Grad-CAM and LIME images, we can see that the regions contributing to the prediciton correspond to the left kidney and some lesions in the liver:
+[img](app/assets/lime_gc_example_correlation.png)
+
+For the next example, we have a t2 image which is correctly predicted. The Grad-CAM image appears to attend to the text annotation in the top left of the image. 
+[img](app/assets/t2_prediction_image.png)
+[img](app/assets/lime_gc_example_t2_marker.png)
+
+
 ## How to install and use the repository code
 
 **Google Colab**
 
-The simplest way to view the code involved in training the models, inference from the models, and visualization of incorrect predictions and Gan-CAM images is through the
-## need to update the page
+One way to view some EDA and the code involved in the LIME explanation is in the colab notebook at [mriseries_notebook.ipynb](app/notebooks/mriseries_notebook.ipynb).  But a better way is to run the demo below.
 
-which is located in the notebooks subdirectory of the app directory. 
 
-**Demo**
+## Demo
 
 The streamlit demo displays the ability to scroll through the images of an abdominal MRI examination to get the predicted series for the image, as well as to process an entire studey or group of studys within a folder, writing the labels into the DICOM metadata of the processed files. In order to run the streamlit demo, it is necessary to have the DICOM images of an abdominal MRI examination. The steps to take to run the demo are:
 
