@@ -15,8 +15,9 @@ from alibi.explainers import AnchorImage
 
 from scripts.demo_utils import anchors_predict_fn, generate_anchor_explanation, visualize_anchor_explanation
 from scripts.demo_utils import check_prediction_tag, load_dicom_data, apply_window_level, normalize_array, get_single_image_inference, generate_colored_lime_mask
-from scripts.demo_utils import extract_number_from_filename, lime_text
+from scripts.demo_utils import extract_number_from_filename, lime_text, gradcam_text
 from scripts.demo_utils import get_lime_mask, lime_predict_fn, normalize_to_255
+from scripts.demo_utils import generate_gradcam, overlay_gradcam
 from  scripts.process_tree import Processor 
 from scripts.cnn.cnn_inference import *
 from  scripts.config import *
@@ -199,81 +200,114 @@ if os.path.exists(start_folder) and os.path.isdir(start_folder):
                 # st.write(image_path)
                 predicted_type, predicted_confidence = get_single_image_inference(image_path, model)
                 st.write(f'Predicted type: {predicted_type}, confidence score: {predicted_confidence:.2f}')
+                
+                # dropdown to display the confusion matrix
+                with st.expander("View Confusion Matrix"):
+                    st.image("assets/FigPixel20230412.png", caption="Confusion Matrix")
+
             st.write(f'Explainable AI methods that may help to understand the model')
             with st.expander("What is LIME and what does it tell me?"):
                 st.markdown(lime_text)
 
-            get_lime_explanation = st.button("Generate LIME Explanation")
-                     
-            if get_lime_explanation:
-                st.write('Generating LIME explanation. This may take a few minutes...')
+            with st.expander("What is Grad-CAM and what does it tell me?"):
+                st.markdown(gradcam_text)
+
+            # Initialize variables for LIME and Grad-CAM images
+            lime_colored_mask = None
+            gradcam_overlay = None
+
+            # Grad-CAM explanation
+            generate_gradcam_btn = st.button("Generate Grad-CAM Explanation (Fast)")
+            if generate_gradcam_btn:
                 if image_path:
                     try:
                         # Load the DICOM image
                         ds = pydicom.dcmread(image_path)
-                        image = ds.pixel_array
-                        image=normalize_to_255(image)
+                        pixel_array = ds.pixel_array
+                        normalized_image = normalize_to_255(pixel_array)  # Normalize pixel values to 0-255
+                        pil_image = Image.fromarray(normalized_image).convert("RGB")  # Convert to PIL image
+
+                        # Define the target layer
+                        target_layer = model.densenet.features.denseblock4  # Layer for the Grad-CAM explanation
+
+                        # Generate the Grad-CAM heatmap
+                        cam = generate_gradcam(pil_image, model, target_layer, test_transform)
+
+                        # Overlay Grad-CAM on the original image
+                        gradcam_overlay = overlay_gradcam(cam, pil_image)
+
+                        # Display the Grad-CAM heatmap
+                        st.image(gradcam_overlay, caption="Grad-CAM Explanation (Red: High Importance, Blue: Low Importance)", use_container_width=True)
+
+                    except Exception as e:
+                        st.error(f"Error generating Grad-CAM explanation: {e}")
+                else:
+                    st.warning("Please select an image.")
+
+            # LIME explanation
+            get_lime_explanation = st.button("Generate LIME and Grad-CAM Explanation (Slow)")
+                     
+            if get_lime_explanation:
+                st.write('Generating LIME explanation. This may take approximately 1-2 minutes...')
+                if image_path:
+                    try:
+                        # Load the DICOM image
+                        ds = pydicom.dcmread(image_path)
+                        pixel_array = ds.pixel_array
+                        normalized_image=normalize_to_255(pixel_array)
+                        pil_image = Image.fromarray(normalized_image).convert("RGB")
                         
+                        # Generate Grad-CAM
+                        target_layer = model.densenet.features.denseblock4  # Adjust as needed for your model
+                        cam = generate_gradcam(pil_image, model, target_layer, test_transform)
+                        gradcam_overlay = overlay_gradcam(cam, pil_image)
+
                         # Generate the LIME explanation with green and yellow coloring
-                        lime_colored_mask = generate_colored_lime_mask(image, model, lime_predict_fn, test_transform=test_transform)
+                        lime_colored_mask = generate_colored_lime_mask(normalized_image, model, lime_predict_fn, test_transform=test_transform)
 
-                        # Display the LIME explanation
-                        st.image(lime_colored_mask, caption="LIME Explanation (Green: Positive, Red: Negative)", use_container_width=True)
-
-                        # Add a progress bar to the app
-                        progress_bar = st.progress(0)
-
-                        def update_progress(current, total):
-                             progress = int((current / total) * 100)
-                             progress_bar.progress(progress)
-
-                        # # Run LIME and get the mask
-                        # lime_mask = get_lime_mask(image, model, lime_predict_fn, test_transform, progress_callback=update_progress)
-
-                        #  # Resize the LIME mask if necessary
-                        # if lime_mask.shape != image.shape[:2]:
-                        #     lime_mask_resized = resize(lime_mask, image.shape[:2], preserve_range=True).astype(int)
-                        # else:
-                        #     lime_mask_resized = lime_mask
-
-                        # # Superimpose the LIME mask
-                        # superimposed_image = mark_boundaries(image, lime_mask_resized)
+                        # Display the LIME explanation and Grad-CAM side by side
+                        st.subheader("LIME + Grad-CAM Explanations")
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            st.image(gradcam_overlay, caption="Grad-CAM Explanation (Red: High Importance, Blue: Low Importance)", use_container_width=True)                   
+                        with col2:
+                            st.image(lime_colored_mask, caption="LIME Explanation (Green: Positive, Yellow: Negative)", use_container_width=True)
                 
-
-                        # # Display the LIME explanation
-                        # st.image(superimposed_image, caption="LIME Explanation", use_container_width=True)
                     except Exception as e:
                         st.error(f"Error generating LIME explanation: {e}")
                 else:
                     st.warning("Please select an image.")
             
-            # Generate Anchors explanation
-            generate_anchors = st.button("Generate Anchors Explanation")
-            if generate_anchors:
-                if image_path:
-                    try:
-                        # Load the DICOM image
-                        ds = pydicom.dcmread(image_path)
-                        image = ds.pixel_array
+            
 
-                        # Generate the Anchors explanation
-                        explanation, class_label = generate_anchor_explanation(
-                            image=image,
-                            model=model,
-                            device=next(model.parameters()).device,
-                            explainer=anchor_explainer,
-                            abd_label_dict=abd_label_dict,
-                            test_transform=test_transform
-                        )
+            # # Generate Anchors explanation
+            # generate_anchors = st.button("Generate Anchors Explanation")
+            # if generate_anchors:
+            #     if image_path:
+            #         try:
+            #             # Load the DICOM image
+            #             ds = pydicom.dcmread(image_path)
+            #             image = ds.pixel_array
+            #             #image=normalize_to_255(image)
 
-                        # Visualize the explanation
-                        fig = visualize_anchor_explanation(image, explanation, title=f"Anchor Explanation for Class: {class_label}")
-                        st.pyplot(fig)
+            #             # Generate the Anchors explanation
+            #             explanation = generate_anchor_explanation(
+            #                 image=image,
+            #                 model=model,
+            #                 device=next(model.parameters()).device,
+            #                 explainer=anchor_explainer,
+            #                 abd_label_dict=abd_label_dict,
+            #                 test_transform=test_transform
+            #             )
 
-                    except Exception as e:
-                        st.error(f"Error generating Anchors explanation: {e}")
-                else:
-                    st.warning("Please select an image.")
+            #             # Visualize the explanation
+            #             fig = visualize_anchor_explanation(image, explanation, title=f"Anchor Explanation for {os.path.basename(image_path)}")
+            #             st.pyplot(fig)
+
+            #         except Exception as e:
+            #             st.error(f"Error generating Anchors explanation: {e}")
+            #     else:
+            #         st.warning("Please select an image.")
 
         else:
             st.warning("No DICOM files found in the folder.")
