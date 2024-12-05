@@ -96,7 +96,7 @@ For the first example, it is a portal venous phase image for which the entire se
 For the Grad-CAM and LIME images, we can see that the regions contributing to the prediciton correspond to the left kidney and some lesions in the liver:
 ![img](app/assets/lime_gc_example_correlation.png)
 
-For the next example, we have a t2 image which is correctly predicted. The Grad-CAM image appears to attend to the text annotation in the top left of the image. 
+For the next example, we have a t2 image which is correctly predicted. The Grad-CAM image appears to attend to the text annotation in the top left of the image. Note that this annotation was not present on the original training dataset is present after processing the series by the classifier. 
 ![img](app/assets/t2_prediction_image.png)
 ![img](app/assets/lime_gc_example_t2_marker.png)
 
@@ -130,10 +130,6 @@ streamlit run demo.py
 ```
 The streamlit demo app will allow one to view images from the sample batch of studies in the default folder in the left sidebar. These images may or may not have labels embedded into the DICOM tags from prior label processing (generally, the prediction will show over the top left aspect of the image if it has been previously processed). One use of the demo app is to select studies to process (one study/patient at a time). This will generate predictions and write them into the DICOM tags by default. If the destination folder selctor is left blank, the default is for the images to be written back to the same folder, overwriting the previously unprocessed study. Other functions in the demo include the ability to get predictions (the fusion model and its subcomponents) for a single image. It is also possible to view a stuby by the series labels (part of the study in the SeriesDescription), or by the predicted class if the study has been previously processed by the classifier. Overall, the goal is to have a pass-through DICOM server that performs the predictions and sends the processed images back to the souce, but this current demo shows proof of concept and provides a user interface to interact with a study of choice. 
 
-
-## Repository Structure
-
-[View Tree Structure](tree_structure.txt)
 
 
 ## References:
