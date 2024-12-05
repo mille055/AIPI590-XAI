@@ -91,14 +91,14 @@ While LIME explains predictions using localized perturbations and linear approxi
 
 ### Examples
 For the first example, it is a portal venous phase image for which the entire series is incorrectly labeled by the model as an arterial phase series (which is very similar) and the inference for the individual image has label t2 with low confidence. 
-[img](app/assets/pv_prediction_image.png)
+![img](app/assets/pv_prediction_image.png)
 
 For the Grad-CAM and LIME images, we can see that the regions contributing to the prediciton correspond to the left kidney and some lesions in the liver:
-[img](app/assets/lime_gc_example_correlation.png)
+![img](app/assets/lime_gc_example_correlation.png)
 
 For the next example, we have a t2 image which is correctly predicted. The Grad-CAM image appears to attend to the text annotation in the top left of the image. 
-[img](app/assets/t2_prediction_image.png)
-[img](app/assets/lime_gc_example_t2_marker.png)
+![img](app/assets/t2_prediction_image.png)
+![img](app/assets/lime_gc_example_t2_marker.png)
 
 
 ## How to install and use the repository code
