@@ -202,8 +202,8 @@ def generate_colored_lime_mask(image, model, lime_predict_fn, test_transform, nu
     processed_image = test_transform(image_pil).unsqueeze(0).to(next(model.parameters()).device)
     image_np = processed_image.squeeze(0).permute(1, 2, 0).cpu().numpy()
     image_np = (image_np - image_np.min()) / (image_np.max() - image_np.min())
-    print(f"image_np shape: {image_np.shape}, min: {image_np.min()}, max: {image_np.max()}")
-    print(f"image_np dtype: {image_np.dtype}")
+    # print(f"image_np shape: {image_np.shape}, min: {image_np.min()}, max: {image_np.max()}")
+    # print(f"image_np dtype: {image_np.dtype}")
 
     # Generate the explanation
     explanation = explainer.explain_instance(
@@ -213,18 +213,6 @@ def generate_colored_lime_mask(image, model, lime_predict_fn, test_transform, nu
         hide_color=0,
         num_samples=num_samples
     )
-
-    # # Get weights for the top label
-    # top_label = explanation.top_labels[0]
-    # weights = explanation.local_exp[top_label]  # List of (superpixel, weight)
-
-    # # Print weights
-    # print("Superpixel Weights:", weights)
-
-    # segments = explanation.segments
-    # plt.imshow(mark_boundaries(image, segments))
-    # plt.title("Superpixel Segmentation")
-    # plt.show()
 
 
     # Get the mask with both positive (green) and negative (yellow) contributions
@@ -276,56 +264,6 @@ def anchors_predict_fn(images, model, device):
 
     return torch.nn.functional.softmax(outputs, dim=1).cpu().numpy()
 
-def generate_anchor_explanation(image, model, device, explainer, abd_label_dict, test_transform=None):
-    """
-    Generate an Anchors explanation for a given image.
-
-    Args:
-        image (ndarray): The input image (H, W, C).
-        model (torch.nn.Module): The trained model.
-        device (torch.device): The device (CPU/GPU) where the model is running.
-        explainer (AnchorImage): An initialized AnchorImage explainer.
-        abd_label_dict (dict): A dictionary mapping class indices to labels.
-
-    Returns:
-        dict: Anchors explanation object.
-        ndarray: The Anchors explanation segments.
-    """
-    image_pil = Image.fromarray(image).convert('RGB')  # Ensure RGB
-    processed_image = test_transform(image_pil).unsqueeze(0).to(next(model.parameters()).device)
-    image_np = processed_image.squeeze(0).permute(1, 2, 0).cpu().numpy()
-    image_np = (image_np - image_np.min()) / (image_np.max() - image_np.min())
-    print(f"image_np shape: {image_np.shape}, min: {image_np.min()}, max: {image_np.max()}")
-    print(f"image_np dtype: {image_np.dtype}")
-    
-    # Run the Anchors explanation
-    explanation = explainer.explain(image_np, threshold=0.80, disc_perc=(5,95), n_covered_ex=1000)
-    #print('explanation:', explanation)
-
-    # Map the predicted class to its label
-    # predicted_class = np.argmax(explanation['anchor_probs'])
-    # print('predicted_class:', predicted_class)
-    # class_label = abd_label_dict.get(str(predicted_class), "Unknown")
-
-    return explanation
-
-def visualize_anchor_explanation(image, explanation, title="Anchor Explanation"):
-    """
-    Visualize the Anchors explanation.
-
-    Args:
-        image (ndarray): The input image (H, W, C).
-        explanation (dict): The Anchors explanation object.
-
-    Returns:
-        matplotlib figure: The image with Anchors explanation overlay.
-    """
-    # Generate the visualization with mark_boundaries
-    fig, ax = plt.subplots()
-    ax.imshow(mark_boundaries(image, explanation['segments'].astype(int)))
-    ax.set_title(title)
-    ax.axis("off")
-    return fig
 
 def generate_gradcam(image, model, target_layer, test_transform, target_class=None):
     """

@@ -13,7 +13,6 @@ from skimage.segmentation import mark_boundaries
 from skimage.transform import resize
 from alibi.explainers import AnchorImage
 
-from scripts.demo_utils import anchors_predict_fn, generate_anchor_explanation, visualize_anchor_explanation
 from scripts.demo_utils import check_prediction_tag, load_dicom_data, apply_window_level, normalize_array, get_single_image_inference, generate_colored_lime_mask
 from scripts.demo_utils import extract_number_from_filename, lime_text, gradcam_text
 from scripts.demo_utils import get_lime_mask, lime_predict_fn, normalize_to_255
@@ -49,7 +48,7 @@ test_transform = transforms.Compose([
 ])
 
 # the place to find the image data
-start_folder = "/app/data"
+start_folder = "data/"
 #start_folder = os.environ.get("SOURCE_DATA_PATH")
 
 # the place to put processed image data
