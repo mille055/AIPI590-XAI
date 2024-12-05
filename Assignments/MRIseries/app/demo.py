@@ -52,7 +52,7 @@ start_folder = "data/"
 #start_folder = os.environ.get("SOURCE_DATA_PATH")
 
 # the place to put processed image data
-destination_folder = '/app/data'
+destination_folder = 'data/processed/'
 destination_folder = st.sidebar.text_input("Enter destination folder path:", value="")
 #destination_folder = os.environ.get("SOURCE_DATA_PATH")
 
